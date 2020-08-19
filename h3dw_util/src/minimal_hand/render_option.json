@@ -1,0 +1,47 @@
+{
+	"background_color" : [ 1.0, 1.0, 1.0 ],
+	"class_name" : "RenderOption",
+	"default_mesh_color" : [ 0.9, 0.9, 0.9 ],
+	"image_max_depth" : 3000,
+	"image_stretch_option" : 1,
+  "interpolation_option" : 0,
+
+	"light0_color" : [ 1.0, 1.0, 1.0 ],
+	"light0_diffuse_power" : 0.7,
+	"light0_position" : [ 0.0, 0.0, 2.0 ],
+	"light0_specular_power" : 0.7,
+	"light0_specular_shininess" : 70.0,
+
+  "light1_color" : [ 0.0, 0.0, 0.0 ],
+	"light1_diffuse_power" : 0.7,
+	"light1_position" : [ 0.0, 2.0, 0 ],
+	"light1_specular_power" : 0.1,
+	"light1_specular_shininess" : 70.0,
+
+  "light2_color" : [ 0.0, 0.0, 0.0 ],
+  "light2_diffuse_power" : 0.7,
+	"light2_position" : [ 2.0, -2.0, 0.0 ],
+	"light2_specular_power" : 0.1,
+	"light2_specular_shininess" : 70.0,
+
+  "light3_color" : [ 0.0, 0.0, 0.0 ],
+	"light3_diffuse_power" : 0.7,
+	"light3_position" : [ -2.0, -2.0, 0.0 ],
+	"light3_specular_power" : 0.1,
+  "light3_specular_shininess" : 70.0,
+
+	"light_ambient_color" : [ 0.3, 0.3, 0.3 ],
+
+  "light_on" : true,
+	"line_width" : 1.0,
+	"mesh_color_option" : 1,
+	"mesh_shade_option" : 1,
+	"mesh_show_back_face" : true,
+	"mesh_show_wireframe" : false,
+	"point_color_option" : 0,
+	"point_show_normal" : false,
+	"point_size" : 5.0,
+	"show_coordinate_frame" : false,
+	"version_major" : 1,
+	"version_minor" : 0
+}

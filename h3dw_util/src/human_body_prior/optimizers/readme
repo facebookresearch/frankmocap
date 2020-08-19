@@ -1,0 +1,2 @@
+This has been copied from https://github.com/pytorch/pytorch/pull/8824
+PyTorch 1.2.0 has already merged this pull-request and we will incorporate it from the official repository in our code in near future.
