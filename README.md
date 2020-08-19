@@ -113,3 +113,9 @@ Please refer to [docs/refinement.md](docs/refinement.md)
 
 ## Prepare Dataset and other
 Please refer to [docs/prepare_dataset.md](docs/prepare_dataset.md)
+
+
+# License
+## License
+[CC-BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/legalcode). 
+See the [LICENSE](LICENSE) file. 
