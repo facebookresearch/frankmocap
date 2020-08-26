@@ -1,3 +1,24 @@
+# Han's update for demo
+* Before starting this demo, please try eft mocap (body mocap) first.
+* Current demo uses [2D keypoint detector](lightweight-human-pose-estimation.pytorch) to find hand bbox
+    - Run the following script
+    ```
+    sh scripts/install_pose2d.sh
+    ```
+    - Note that this is very naive version!
+
+* Run hand mocap demo:
+```
+    python -m demo.demo_handmocap --webcam
+
+    #Alternatively, you can specify a video input
+    python -m demo.demo_handmocap --vPath ./sample/han_long.mp4
+```
+
+
+# Old README below
+
+
 ## Preparation
 * Please put ry_utils.py and parallel_io.py in your Python search path. Latest version of two files can be found in tools/.
 * Please use the SMPL-X modified by Yu.
