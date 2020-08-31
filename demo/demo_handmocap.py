@@ -212,7 +212,7 @@ def RunMonomocap(args, video_path, visualizer, bboxdetector, handmocap, device, 
                     
                     predoutput[lr] = handmocap.regress(img_original_bgr, bboxXYHW[lr], lr)
 
-                    if predoutput is None:
+                    if predoutput[lr] is None:
                         continue
                     pred_vertices_img = predoutput[lr]['pred_vertices_img']
                     # pred_joints_img = predoutput['pred_joints_img']

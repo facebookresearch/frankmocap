@@ -210,14 +210,18 @@ class HandMocap:
 
         ##Get BBox for Hand
         center, scale = bbox_to_scale_center(bbox_XYWH)
-        img_cropped, bboxScale_o2n, bboxTopLeft_inOriginal = crop_bboxInfo(raw_image, center, scale)        #Cropping image using bbox information
+        try:
+            img_cropped, bboxScale_o2n, bboxTopLeft_inOriginal = crop_bboxInfo(raw_image, center, scale)        #Cropping image using bbox information
+        except:
+            print("ERROR in crop_bboxInfo")
+            return None,None,None,None
 
         if img_cropped is not None:
             # if lr=='rhand':
             #     viewer2D.ImShow(img_cropped, waitTime=0, name='croppedH')
             pass
         else:
-            return None
+            return None,None,None,None
         
         if lr=='lhand':
             img_cropped = np.ascontiguousarray(img_cropped[:, ::-1,:], img_cropped.dtype)        #horizontal Flip to make it as right hand
@@ -253,10 +257,10 @@ class HandMocap:
                     boxScale_o2n: bbox scaling factor (redundant) 
         """
         img, norm_img, boxScale_o2n, bboxTopLeft = self._process_image_bbox(img_original, bbox_XYWH, lr)
-        norm_img =norm_img.unsqueeze(0)
-
         if img is None:
             return None
+        norm_img =norm_img.unsqueeze(0)
+
 
         with torch.no_grad():
             # pred_rotmat, pred_betas, pred_camera = self.model_regressor(norm_img.to(self.device))
@@ -287,7 +291,7 @@ class HandMocap:
                 # glViewer.SetOrthoCamera(True)
                 glViewer.show()
 
-            ##Output
+            ## Output
             predoutput ={}
             i=0
             camParam_scale = pred_res['cams'][i,0]
