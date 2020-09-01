@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# Part of the code from https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
 import argparse
 import os
@@ -26,7 +24,6 @@ class BaseOptions():
         self.parser.add_argument('--display_winsize', type=int, default=256,  help='display window size')
         self.parser.add_argument('--display_id', type=int, default=1, help='window id of the web display')
         self.parser.add_argument('--display_port', type=int, default=80, help='visdom port of the web display')
-        self.parser.add_argument('--display_single_pane_ncols', type=int, default=1, help='if positive, display all images in a single visdom web panel with certain number of images per row.')
 
         self.parser.add_argument('--data_root', type=str, default='', help='root dir for all the datasets')
         self.parser.add_argument('--freihand_anno_path', type=str, default='', help='annotation_path that stores the information of freihand dataset')
@@ -45,10 +42,10 @@ class BaseOptions():
         self.parser.add_argument('--pose_params_dim', type=int, default=48, help='number of params to be estimated')
         self.parser.add_argument('--shape_params_dim', type=int, default=10, help='number of params to be estimated')
 
-        self.parser.add_argument('--model_root', type=str, default='checkpoint/rongyu/data/models/', help='root dir for all the pretrained weights and pre-defined models')
+        self.parser.add_argument('--model_root', type=str, default='./data', help='root dir for all the pretrained weights and pre-defined models')
         self.parser.add_argument('--smplx_model_file', type=str, default='smplx/SMPLX_NEUTRAL.pkl', help='path of pretraind smpl model')
-        self.parser.add_argument('--smplx_hand_info_file', type=str, default='smplx/SMPLX_HAND_INFO.pkl', help='path of smpl face')
-        self.parser.add_argument('--mean_param_file', type=str, default='stat/mean_mano_params.pkl', help='path of smpl face')
+        self.parser.add_argument('--smplx_hand_info_file', type=str, default='hand_module/SMPLX_HAND_INFO.pkl', help='path of smpl face')
+        self.parser.add_argument('--mean_param_file', type=str, default='hand_module/mean_mano_params.pkl', help='path of smpl face')
 
         self.parser.add_argument('--single_branch', action='store_true', help='use only one branch, this branch could either be IUV or other format such as image')
         self.parser.add_argument('--two_branch', action='store_true', help='two branch input, image and another auxiliary branch, the auxiliary branch is IUV in default')
@@ -68,24 +65,11 @@ class BaseOptions():
         if not self.initialized:
             self.initialize()
 
-
         if args is None:
             self.opt = self.parser.parse_args()
         else:
             self.opt = self.parser.parse_args(args)
         # self.opt, unknown = self.parser.parse_known_args()
         self.opt.isTrain = self.isTrain   # train or test
-
-        '''
-        str_ids = self.opt.gpu_ids.split(',')
-        self.opt.gpu_ids = []
-        for str_id in str_ids:
-            id = int(str_id)
-            if id >= 0:
-                self.opt.gpu_ids.append(id)
-        # set gpu ids
-        if len(self.opt.gpu_ids) > 0:
-            torch.cuda.set_device(self.opt.gpu_ids[0])
-        '''
 
         return self.opt

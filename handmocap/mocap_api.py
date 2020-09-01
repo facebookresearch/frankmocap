@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-
+import os, sys, shutil
+import os.path as osp
 import torch
 import numpy as np
 from torchvision.transforms import transforms
@@ -9,10 +10,10 @@ import cv2
 # from bodymocap.utils.imutils import crop,crop_bboxInfo, process_image_bbox, process_image_keypoints, bbox_from_keypoints
 # from bodymocap.utils.imutils import convert_smpl_to_bbox, convert_bbox_to_oriIm
 from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
-from renderer import viewer2D, glViewer
+# from renderer import viewer2D, glViewer
 
 from handmocap.options.test_options import TestOptions
-from handmocap.handmodels.h3dw_model import H3DWModel
+from handmocap.hand_modules.h3dw_model import H3DWModel
 
 ###  Bbox cropping + Image processing function. (TODO: this is way too complicated.. originated from SPIN's body part) ###
 # keypoints: (Nx3)
@@ -130,32 +131,8 @@ def crop_bboxInfo(img, center, scale, res =(224,224)):
     return cropedImg224, bboxScale_o2n, np.array(bboxTopLeft_inOriginal)
 
 
-#Padding and resizing
-def process_img(croppedImg):
-    padImgSize = max(croppedImg.shape)
-    padImg = np.zeros((padImgSize,padImgSize,3), dtype=np.uint8)
-
-    if croppedImg.shape[0]<padImgSize:
-        start = padImgSize-croppedImg.shape[0]
-        padImg[:-(padImgSize-croppedImg.shape[0]),:] = croppedImg
-    elif croppedImg.shape[1]<padImgSize:
-        start = padImgSize-croppedImg.shape[1]
-        padImg[:,:-(padImgSize-croppedImg.shape[1])] = croppedImg
-    else:
-        padImg = croppedImg
-
-    # if padImg.shape[0]!=224:
-    bboxImg_224 = cv2.resize(padImg, (224,224))
-    return bboxImg_224
-
-
-
 class HandMocap:
-
     def __init__(self, regressor_checkpoint, smpl_dir, device = torch.device('cuda') , bUseSMPLX = False):
-
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
         #For image transform
         transform_list = [ transforms.ToTensor(),
                           transforms.Normalize((0.5, 0.5, 0.5),
@@ -168,16 +145,13 @@ class HandMocap:
         #Default options
         self.opt.single_branch = True
         self.opt.main_encoder = "resnet50"
-        self.opt.data_root = "/home/hjoo/dropbox/hand_yu/data/"
-        self.opt.model_root = "/home/hjoo/dropbox/hand_yu/data/models/"
-        # self.opt.demo_img_dir = "youtube/image_hand"
+        # self.opt.data_root = "/home/hjoo/dropbox/hand_yu/data/"
+        self.opt.model_root = "../data"
         self.opt.batchSize = 1
         self.opt.phase = "test"
-        # self.opt.test_dataset = "demo"
         self.opt.nThreads = 0
-        epoch = 190     #Need to load the encoder from 190 epoch
-        self.opt.which_epoch = str(epoch)
-
+        self.opt.which_epoch = -1
+        self.opt.checkpoint_path = regressor_checkpoint
 
         self.opt.serial_batches = True  # no shuffle
         self.opt.no_flip = True  # no flip
@@ -192,11 +166,27 @@ class HandMocap:
         #Save mesh faces
         self.rhand_mesh_face = self.model_regressor.right_hand_faces_local.copy()
         self.lhand_mesh_face = self.model_regressor.right_hand_faces_local.copy()[:,::-1]
+    
+
+    def __pad_and_resize(self, img, final_size=224):
+        height, width = img.shape[:2]
+        if height > width:
+            ratio = final_size / height
+            new_height = final_size
+            new_width = int(ratio * width)
+        else:
+            ratio = final_size / width
+            new_width = final_size
+            new_height = int(ratio * height)
+        new_img = np.zeros((final_size, final_size, 3), dtype=np.uint8)
+        new_img[:new_height, :new_width, :] = cv2.resize(img, (new_width, new_height))
+        bbox_top_left_origin = np.array([0, 0])
+        return new_img, ratio, bbox_top_left_origin
 
 
     def _process_image_bbox(self, raw_image, bbox_XYWH, lr):
         """
-        args: original raw image, bbox
+        args: original image, bbox, lr ('lhand' or 'rhand', indicates the input hand is left or right)
         output:
             img_cropped: 224x224 cropped image (original colorvalues 0-255)
             norm_img: 224x224 cropped image (normalized color values)
@@ -204,45 +194,36 @@ class HandMocap:
             bboxTopLeft_inOriginal: top_left corner point in original image cooridate
         """
 
-        imgWidth = raw_image.shape[1]
-        imgHeight = raw_image.shape[0]
-        # imgCenter = np.array((imgWidth,imgHeight) ) * 0.5
-
-        ##Get BBox for Hand
-        center, scale = bbox_to_scale_center(bbox_XYWH)
-        try:
-            img_cropped, bboxScale_o2n, bboxTopLeft_inOriginal = crop_bboxInfo(raw_image, center, scale)        #Cropping image using bbox information
-        except:
-            print("ERROR in crop_bboxInfo")
-            return None,None,None,None
-
-        if img_cropped is not None:
-            # if lr=='rhand':
-            #     viewer2D.ImShow(img_cropped, waitTime=0, name='croppedH')
-            pass
+        if bbox_XYWH is None:
+            assert lr == 'rhand'
+            img_cropped, bbox_scale_ratio, bbox_top_left_origin = self.__pad_and_resize(raw_image)
         else:
-            return None,None,None,None
-        
-        if lr=='lhand':
-            img_cropped = np.ascontiguousarray(img_cropped[:, ::-1,:], img_cropped.dtype)        #horizontal Flip to make it as right hand
+            assert False, "Not implemented yet"
+            ##Get BBox for Hand
+            center, scale = bbox_to_scale_center(bbox_XYWH)
+            img_cropped, bbox_scale_ratio, bbox_top_left_origin = crop_bboxInfo(raw_image, center, scale)        #Cropping image using bbox information
+            if img_cropped is not None:
+                # if lr=='rhand':
+                #     viewer2D.ImShow(img_cropped, waitTime=0, name='croppedH')
+                pass
+            else:
+                return None
+            
+            if lr=='lhand':
+                img_cropped = np.ascontiguousarray(img_cropped[:, ::-1,:], img_cropped.dtype)        #horizontal Flip to make it as right hand
 
-        norm_img = process_img(img_cropped)     #Crop and padding...(TODO: why do we need this again?)
-        norm_img = self.normalize_transform(norm_img).float()
+        # change image from numpy to torch.tensor
+        norm_img = self.normalize_transform(img_cropped).float()
 
-        return img_cropped, norm_img, bboxScale_o2n, bboxTopLeft_inOriginal
-        # ##Crop and resize to 224
-        # raw_image_vis = viewer2D.Vis_Bbox_minmaxPt(raw_image.copy(), lhand_pt2d_min, lhand_pt2d_max , color=(0,255,255))
-        # raw_image_vis = viewer2D.Vis_Bbox_minmaxPt(raw_image_vis, rhand_pt2d_min, rhand_pt2d_max, color=(0,255,255))
-        # viewer2D.ImShow(raw_image_vis,waitTime=0)
-
-        # ##Crop and resize to 224
+        return img_cropped, norm_img, bbox_scale_ratio, bbox_top_left_origin
 
 
-    def regress(self, img_original, bbox_XYWH, lr, bExport=True):
+    def regress(self, img_original, bbox_XYWH, lr, export=True, visualize=False):
         """
             args: 
                 img_original: original raw image (BGR order by using cv2.imread)
-                bbox_XYWH: bounding box around the target: (minX,minY,width, height)
+                bbox_XYWH: None or bounding box around the target: (minX, minY, width, height). 
+                           if bbox_XYWH is None, it means that the input img are already center-cropped
                 lr: 'lhand' or 'rhand'
             outputs:
                 Default output:
@@ -256,63 +237,68 @@ class HandMocap:
                     bboxTopLeft:  bbox top left (redundant)
                     boxScale_o2n: bbox scaling factor (redundant) 
         """
-        img, norm_img, boxScale_o2n, bboxTopLeft = self._process_image_bbox(img_original, bbox_XYWH, lr)
-        if img is None:
-            return None
+        img_cropped, norm_img, bbox_scale_ratio, bbox_top_left = self._process_image_bbox(img_original, bbox_XYWH, lr)
         norm_img =norm_img.unsqueeze(0)
 
+        if img_cropped is None:
+            return None
 
-        with torch.no_grad():
-            # pred_rotmat, pred_betas, pred_camera = self.model_regressor(norm_img.to(self.device))
-            self.model_regressor.set_input_imgonly({'img': norm_img})
-            self.model_regressor.test()
-            pred_res = self.model_regressor.get_pred_result()
+        else:
+            with torch.no_grad():
+                # pred_rotmat, pred_betas, pred_camera = self.model_regressor(norm_img.to(self.device))
+                self.model_regressor.set_input_imgonly({'img': norm_img})
+                self.model_regressor.test()
+                pred_res = self.model_regressor.get_pred_result()
 
-            #Visualize
-            if False:
-                i =0
-                #Visualize Mesh
-                camParam_scale = pred_res['cams'][i,0]
-                camParam_trans = pred_res['cams'][i,1:]
-                pred_vert_vis = pred_res['pred_verts'][i]        #778,3
-                pred_vert_vis = convert_smpl_to_bbox(pred_vert_vis, camParam_scale, camParam_trans)
-                mesh ={'ver':pred_vert_vis, "f":self.model_regressor.right_hand_faces_local }
-                glViewer.setMeshData([mesh],bComputeNormal=True)
+                #Visualize
+                if visualize:
+                    #Visualize Mesh
+                    assert False, "Not Implemented Yet."
+                    i = 0
+                    cam_scale = pred_res['cams'][i, 0]
+                    cam_trans = pred_res['cams'][i, 1:]
+                    pred_verts_vis = pred_res['pred_verts'][i]        #778,3
+                    pred_verts_vis = convert_smpl_to_bbox(pred_verts_vis, cam_scale, cam_trans)
+                    mesh ={'ver':pred_verts_vis, "f":self.model_regressor.right_hand_faces_local }
+                    glViewer.setMeshData([mesh], bComputeNormal=True)
 
-                #Visualize Skeleton
-                pred_joints_vis = pred_res['pred_joints_3d'][i]        #21,3
-                pred_joints_vis = convert_smpl_to_bbox(pred_joints_vis, camParam_scale, camParam_trans)
-                pred_joints_vis = pred_joints_vis.ravel()[:,np.newaxis]
-                glViewer.setSkeleton( [pred_joints_vis], jointType='hand_smplx')
+                    #Visualize Skeleton
+                    pred_joints_vis = pred_res['pred_joints_3d'][i]        #21,3
+                    pred_joints_vis = convert_smpl_to_bbox(pred_joints_vis, cam_scale, cam_trans)
+                    pred_joints_vis = pred_joints_vis.ravel()[:,np.newaxis]
+                    glViewer.setSkeleton( [pred_joints_vis], jointType='hand_smplx')
 
-                ################ Other 3D setup############### 
-                # glViewer.setBackgroundTexture(croppedImg)
-                # glViewer.setWindowSize(croppedImg.shape[1]*3, croppedImg.shape[0]*3)
-                # glViewer.SetOrthoCamera(True)
-                glViewer.show()
+                    ################ Other 3D setup############### 
+                    # glViewer.setBackgroundTexture(croppedImg)
+                    # glViewer.setWindowSize(croppedImg.shape[1]*3, croppedImg.shape[0]*3)
+                    # glViewer.SetOrthoCamera(True)
+                    glViewer.show()
 
-            ## Output
-            predoutput ={}
-            i=0
-            camParam_scale = pred_res['cams'][i,0]
-            camParam_trans = pred_res['cams'][i,1:]
-            pred_vert_vis = pred_res['pred_verts'][i]
-            hand_boxScale_o2n = boxScale_o2n
-            hand_bboxTopLeft = bboxTopLeft
+                ##Output
+                pred_output = dict()
+                i=0
+                cam_scale = pred_res['cams'][i, 0]
+                cam_trans = pred_res['cams'][i, 1:]
+                pred_verts_origin = pred_res['pred_verts'][i]
 
-            pred_vert_vis = convert_smpl_to_bbox(pred_vert_vis, camParam_scale, camParam_trans, bAppTransFirst=True)        #SMPL space -> bbox space
-            if lr =="lhand":        #Flip
-                pred_vert_vis[:,0] *= -1
-            pred_vert_vis = convert_bbox_to_oriIm(pred_vert_vis, hand_boxScale_o2n, hand_bboxTopLeft, img_original.shape[1], img_original.shape[0]) 
+                if lr =="lhand":        #Flip
+                    pred_verts_origin[:,0] *= -1
 
-            predoutput['pred_vertices_img'] =  pred_vert_vis #SMPL vertex in image space
-            # predoutput['pred_joints_img'] = pred_joints_vis_img #SMPL joints in image space
-            # if bExport:
-            #     predoutput['pred_rotmat'] = pred_rotmat.detach().cpu().numpy()
-            #     predoutput['pred_betas'] = pred_betas.detach().cpu().numpy()
-            #     predoutput['pred_camera'] = pred_camera
-            #     predoutput['bbox_xyxy'] = [bbox_XYWH[0], bbox_XYWH[1], bbox_XYWH[0]+bbox_XYWH[2], bbox_XYWH[1]+bbox_XYWH[3] ]
-            #     predoutput['bboxTopLeft'] = bboxTopLeft
-            #     predoutput['boxScale_o2n'] = boxScale_o2n
-         
-        return predoutput
+                pred_verts_bbox = convert_smpl_to_bbox(
+                    pred_verts_origin.copy(), cam_scale, cam_trans, bAppTransFirst=True)        #SMPL space -> bbox space
+
+                pred_verts_img = convert_bbox_to_oriIm(
+                    pred_verts_bbox.copy(), bbox_scale_ratio, bbox_top_left, img_original.shape[1], img_original.shape[0]) 
+
+                pred_output['pred_vertices_origin'] = pred_verts_origin # SMPL-X hand vertex in bbox space
+                pred_output['pred_vertices_bbox'] =  pred_verts_bbox # SMPL-X hand vertex in image space
+                pred_output['pred_vertices_img'] =  pred_verts_img # SMPL-X hand vertex in image space
+                pred_output['faces'] = self.model_regressor.right_hand_faces_local
+
+                pred_output['bbox_scale_ratio'] = bbox_scale_ratio
+                pred_output['bbox_top_left'] = bbox_top_left
+                pred_output['cam_trans'] = cam_trans
+                pred_output['cam_scale'] = cam_scale
+                pred_output['img_cropped'] = img_cropped
+
+            return pred_output

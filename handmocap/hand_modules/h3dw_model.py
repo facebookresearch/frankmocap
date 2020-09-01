@@ -10,7 +10,6 @@ import sys
 import shutil
 import os.path as osp
 from collections import OrderedDict
-import deepdish
 import itertools
 import torch.nn.functional as F
 import torch.nn as nn
@@ -19,14 +18,12 @@ import pdb
 import cv2
 from .base_model import BaseModel
 from . import resnet
-from handmocap.handmodels.h3dw_networks import H3DWEncoder
-from .smpl import SMPL, batch_orth_proj_idrot, batch_rodrigues
-from .loss_utils import LossUtil
+from handmocap.hand_modules.h3dw_networks import H3DWEncoder
 import time
 # from util import vis_util
-# import smplx
-from handmocap.handmodels.smplx_hand import body_models as smplx
-import handmocap.tools.parallel_io as pio
+# from handmocap.hand_modules.smplx_hand import body_models as smplx
+import mocap_utils.general_utils as g_utils
+import smplx
 import pdb
 
 
@@ -88,8 +85,6 @@ class H3DWModel(BaseModel):
         self.joints_3d = self.Tensor(nb, opt.num_joints, 3)
         self.joints_3d_weight = self.Tensor(nb, opt.num_joints, 1)
 
-        self.loss_util = LossUtil(opt)
-
         # load mean params, the mean params are from HMR
         self.mean_param_file = osp.join(
             opt.model_root, opt.mean_param_file)
@@ -97,8 +92,6 @@ class H3DWModel(BaseModel):
 
         # set differential SMPL (implemented with pytorch) and smpl_renderer
         smplx_model_path = osp.join(opt.model_root, opt.smplx_model_file)
-        if opt.process_rank <= 0:
-            print("Top finger joints type:", opt.top_finger_joints_type)
         self.smplx = smplx.create(
             smplx_model_path, 
             model_type="smplx", 
@@ -115,53 +108,40 @@ class H3DWModel(BaseModel):
         
         # load pretrained / trained weights for encoder
         if self.isTrain:
-            if opt.continue_train:
-                # resume training from saved weights
-                which_epoch = opt.which_epoch
-                saved_info = self.load_info(which_epoch)
-                opt.epoch_count = saved_info['epoch']
-                self.optimizer_E.load_state_dict(saved_info['optimizer_E'])
-                which_epoch = opt.which_epoch
-                self.load_network(self.encoder, 'encoder', which_epoch)
-                if opt.process_rank <= 0:
-                    print('resume from epoch {}'.format(opt.epoch_count))
-            else:
-                if opt.pretrained_weights is None:
-                    print("Alert: No pretrained weights !!!!!!!!!!!!!")
-                    time.sleep(60) 
-                else:
-                    assert(osp.exists(opt.pretrained_weights))
-                    if not self.opt.dist or self.opt.process_rank <= 0:
-                        print("Load pretrained weights from {}".format(
-                            opt.pretrained_weights))
-                    if opt.dist:
-                        self.encoder.module.load_state_dict(
-                            torch.load(opt.pretrained_weights, 
-                            map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device())), 
-                            strict=False)
-                    else:
-                        self.encoder.load_state_dict(
-                            torch.load(opt.pretrained_weights))
+            assert False, "Not implemented Yet"
+            pass
         else:
             # load trained model for testing
             which_epoch = opt.which_epoch
-            self.success_load = self.load_network(self.encoder, 'encoder', which_epoch)
+            if which_epoch == 'latest' or int(which_epoch)>0:
+                self.success_load = self.load_network(self.encoder, 'encoder', which_epoch)
+            else:
+                checkpoint_path = opt.checkpoint_path
+                if not osp.exists(checkpoint_path): 
+                    print(f"Error: {checkpoint_path} does not exists")
+                    self.success_load = False
+                else:
+                    if self.opt.dist:
+                        self.encoder.module.load_state_dict(torch.load(
+                            checkpoint_path, map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device())))
+                    else:
+                        saved_weights = torch.load(checkpoint_path)
+                        self.encoder.load_state_dict(saved_weights)
+                    self.success_load = True
 
 
     def load_params(self):
         # load mean params first
-        mean_vals = pio.load_pkl_single(self.mean_param_file)
+        mean_vals = g_utils.load_pkl(self.mean_param_file)
         mean_params = np.zeros((1, self.total_params_dim))
 
         # set camera model first
         mean_params[0, 0] = 5.0
 
-        # set pose
+        # set pose (might be problematic)
+        mean_pose = mean_vals['mean_pose'][3:]
         # set hand global rotation
-        mean_pose = mean_vals['mean_pose']
         mean_pose = np.concatenate( (np.zeros((3,)), mean_pose) )
-        # mean_pose[:3] = 0.
-        # mean_pose[0] = np.pi
         mean_pose = mean_pose[None, :]
 
         # set shape
@@ -179,11 +159,10 @@ class H3DWModel(BaseModel):
 
         # load smplx-hand faces
         hand_info_file = osp.join(self.opt.model_root, self.opt.smplx_hand_info_file)
-        hand_info = pio.load_pkl_single(hand_info_file)
-        self.hand_info = hand_info
-        self.right_hand_faces_holistic = hand_info['right_hand_faces_holistic']        
-        self.right_hand_faces_local = hand_info['right_hand_faces_local']
-        self.right_hand_verts_idx = np.array(hand_info['right_hand_verts_idx'], dtype=np.int32)
+        self.hand_info = g_utils.load_pkl(hand_info_file)
+        self.right_hand_faces_holistic = self.hand_info['right_hand_faces_holistic']        
+        self.right_hand_faces_local = self.hand_info['right_hand_faces_local']
+        self.right_hand_verts_idx = np.array(self.hand_info['right_hand_verts_idx'], dtype=np.int32)
 
 
     def set_input_imgonly(self, input):
@@ -240,6 +219,7 @@ class H3DWModel(BaseModel):
         pred_joints_3d = hand_output.hand_joints_shift
         return pred_verts, pred_joints_3d
 
+
     def get_smplx_output_handonly(self, pose_params, shape_params=None):
 
         pose_params =torch.from_numpy(pose_params).cuda()
@@ -290,6 +270,14 @@ class H3DWModel(BaseModel):
             vis_hand_pose[:, :3] = hand_rotation[i, :]
             vis_verts_3d, _ = self.get_smplx_output(vis_hand_pose)
             self.vis_verts_list.append(vis_verts_3d)
+    
+
+    def batch_orth_proj_idrot(self, X, camera):
+        # camera is (batchSize, 1, 3)
+        camera = camera.view(-1, 1, 3)
+        X_trans = X[:, :, :2] + camera[:, :, 1:]
+        res = camera[:, :, 0] * X_trans.view(X_trans.size(0), -1)
+        return res.view(X_trans.size(0), X_trans.size(1), -1)
 
 
     def forward(self):
@@ -316,82 +304,15 @@ class H3DWModel(BaseModel):
         self.generate_mesh_multi_view()
 
         # generate predicted joints 2d
-        self.pred_joints_2d = batch_orth_proj_idrot(
+        self.pred_joints_2d = self.batch_orth_proj_idrot(
             self.pred_joints_3d, self.pred_cam_params)
         
         self.gt_verts, self.gt_joints_3d_mano = self.get_smplx_output(self.gt_pose_params)
 
 
-    def backward_E(self):
-        # 2d keypoint loss
-        self.joints_2d_loss = self.loss_util._keypoint_2d_loss(
-            self.keypoints, self.pred_joints_2d, self.keypoints_weights)
-        self.joints_2d_loss *= self.opt.kp_loss_weight
-        self.loss = self.joints_2d_loss
-
-        # direct mano param loss
-        self.mano_params_loss = self.loss_util._mano_params_loss(
-            self.gt_pose_params, self.pred_pose_params, self.mano_params_weight)
-        self.mano_params_loss *= self.opt.loss_3d_weight
-        self.loss = (self.loss + self.mano_params_loss)
-
-        # mano joint loss
-        mano_joints_weight = self.mano_params_weight.view(self.batch_size, 1, 1)
-        mano_joints_weight = mano_joints_weight.repeat(1, self.opt.num_joints, 1)
-        self.mano_joints_loss = self.loss_util._joints_3d_loss(
-            self.gt_joints_3d_mano, self.pred_joints_3d, mano_joints_weight)
-        self.mano_joints_loss *= self.opt.loss_3d_weight
-        self.mano_joints_loss *= 10 # it's too small, multiples another 10
-        self.loss = (self.loss + self.mano_joints_loss)
-
-        # joints_3d loss
-        # print("joints_3d_weight before", self.joints_3d_weight.size())
-        self.joints_3d_loss = self.loss_util._joints_3d_loss(
-            self.joints_3d, self.pred_joints_3d, self.joints_3d_weight)
-        self.joints_3d_loss *= self.opt.loss_3d_weight
-        self.joints_3d_loss *= 10
-        self.loss = (self.loss + self.joints_3d_loss)
-
-        # total loss backward
-        self.loss.backward()
-
-
-    def optimize_parameters(self):
-        self.optimizer_E.zero_grad()
-        self.backward_E()
-        self.optimizer_E.step()
-
-
     def test(self):
         with torch.no_grad():
             self.forward()
-
-
-    def compute_loss(self):
-        # 2d keypoint loss
-        self.joints_2d_loss = self.loss_util._keypoint_2d_loss(
-            self.keypoints, self.pred_joints_2d, self.keypoints_weights)
-        res_dict = OrderedDict(
-            [('kp_loss', self.joints_2d_loss.detach().cpu().numpy())])
-
-        # direct param loss
-        mano_joints_weight = self.mano_params_weight.view(self.batch_size, 1, 1)
-        mano_joints_weight = mano_joints_weight.repeat(1, self.opt.num_joints, 1)
-        self.mano_params_loss = self.loss_util._mano_params_loss(
-            self.gt_pose_params, self.pred_pose_params, mano_joints_weight)
-        res_dict['mano_param_loss'] = self.mano_params_loss.detach().cpu().numpy()
-
-        # mano joints loss
-        self.mano_joints_loss = self.loss_util._joints_3d_loss(
-            self.gt_joints_3d_mano, self.pred_joints_3d, self.mano_params_weight)
-        res_dict['mano_joints_loss'] = self.mano_joints_loss.detach().cpu().numpy()
-
-        # joints_3d loss
-        self.joints_3d_loss = self.loss_util._joints_3d_loss(
-            self.joints_3d, self.pred_joints_3d, self.joints_3d_weight)
-        res_dict['joints_3d_loss'] = self.joints_3d_loss.detach().cpu().numpy()
-
-        return res_dict
 
 
     def get_pred_result(self):
@@ -413,24 +334,6 @@ class H3DWModel(BaseModel):
             pred_verts_multi_view = pred_verts_multi_view,
         )
         return pred_result
-
-
-    def get_current_errors(self):
-        kp_loss = self.joints_2d_loss.item()
-        total_loss = self.loss.item()
-        loss_dict = OrderedDict([('kp_loss', kp_loss)])
-        
-        mano_params_loss = self.mano_params_loss.item()
-        loss_dict['mano_params_loss'] = mano_params_loss
-
-        mano_joints_loss = self.mano_joints_loss.item()
-        loss_dict['mano_joints_loss'] = mano_joints_loss
-
-        joints_3d_loss = self.joints_3d_loss.item()
-        loss_dict['joints_3d_loss'] = joints_3d_loss
-
-        loss_dict['total_loss'] = total_loss
-        return loss_dict
 
 
     def get_current_visuals(self, idx=0):
@@ -484,23 +387,7 @@ class H3DWModel(BaseModel):
         for idx in range(self.batch_size):
             all_visuals.append(self.get_current_visuals(idx))
         return all_visuals
-
-
-    def save(self, label, epoch):
-        self.save_network(self.encoder, 'encoder', label)
-        save_info = {'epoch': epoch,
-                     'optimizer_E': self.optimizer_E.state_dict()}
-        self.save_info(save_info, label)
-
+    
 
     def eval(self):
         self.encoder.eval()
-
-
-    def update_learning_rate(self, epoch):
-        old_lr = self.opt.lr_e
-        lr = 0.5*(1.0 + np.cos(np.pi*epoch/self.opt.total_epoch)) * old_lr
-        for param_group in self.optimizer_E.param_groups:
-            param_group['lr'] = lr
-        if self.opt.process_rank <= 0:
-            print("Current Learning Rate:{0:.2E}".format(lr))

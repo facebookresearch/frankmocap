@@ -14,7 +14,6 @@
     #Alternatively, you can specify a video input
     python -m demo.demo_handmocap --vPath ./sample/han_long.mp4
 ```
-    - in gui 3D view, press 'C' to see the scene in camera view
 
 
 # Old README below

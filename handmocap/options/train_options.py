@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# Part of the code from https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
 from .base_options import BaseOptions
 

@@ -8,7 +8,7 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
-##Yolo related
+'''
 yolo_path = './PyTorch-YOLOv3'
 sys.path.append(yolo_path)
 try:
@@ -17,22 +17,22 @@ try:
     from utils.datasets import pad_to_square,resize
 except ImportError:
     print("Cannot find PyTorch-YOLOv3")
+'''
 
-
-##lightweight human pose
-# pose2d_estimator_path = '/home/hjoo/codes_test/lightweight-human-pose-estimation.pytorch/'
-# pose2d_checkpoint = "/home/hjoo/codes_test/lightweight-human-pose-estimation.pytorch/pretrain/checkpoint_iter_370000.pth"
-pose2d_checkpoint = "./lightweight-human-pose-estimation.pytorch/checkpoint_iter_370000.pth"
 pose2d_estimator_path = './lightweight-human-pose-estimation.pytorch/'
+pose2d_checkpoint = "./lightweight-human-pose-estimation.pytorch/checkpoint_iter_370000.pth"
+# pose2d_estimator_path = './lhpe'
+# pose2d_checkpoint = "./lhpe/checkpoint_iter_370000.pth"
 sys.path.append(pose2d_estimator_path)
-try:
-    from pose2d_models.with_mobilenet import PoseEstimationWithMobileNet
-    from modules.load_state import load_state
-    from val import normalize, pad_width
-    from modules.pose import Pose, track_poses
-    from modules.keypoints import extract_keypoints, group_keypoints
-except ImportError:
-    print("Cannot find lightweight-human-pose-estimation.pytorch")
+
+# try:
+from pose2d_models.with_mobilenet import PoseEstimationWithMobileNet
+from modules.load_state import load_state
+from val import normalize, pad_width
+from modules.pose import Pose, track_poses
+from modules.keypoints import extract_keypoints, group_keypoints
+# except ImportError:
+    # print("Cannot find lightweight-human-pose-estimation.pytorch")
 
 
 def Load_Yolo(device):
@@ -268,7 +268,7 @@ def pose2d_detecthand(net, img, height_size =256, track = 1, smooth=1, bVis =Tru
     return current_poses
 
 
-def Load_pose2d():
+def load_pose2d():
     """
         This one runs in CPU
     """
@@ -291,12 +291,10 @@ class BodyBboxDetector:
         if method =="yolo":
             print("Loading Yolo Model...")
             self.model = Load_Yolo(device)
-            print("Done")
         elif method=="2dpose":
 
             print("Loading Pose Estimation Model...")
-            self.model = Load_pose2d()
-            print("Done")
+            self.model = load_pose2d()
         else :
             print("invalid method")
             assert False
@@ -335,13 +333,10 @@ class HandBboxDetector:
         self.method = method
 
         if method =="100doh":       #https://fouheylab.eecs.umich.edu/~dandans/projects/100DOH/
-            assert False
-            print("Done")
+            assert False, "100doh not implemented yet."
         elif method=="2dpose":
-
             print("Loading Pose Estimation Model...")
-            self.model = Load_pose2d()
-            print("Done")
+            self.model = load_pose2d()
         else :
             print("invalid method")
             assert False

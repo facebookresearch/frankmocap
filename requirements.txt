@@ -3,3 +3,10 @@ visdom
 dominate
 opencv-python
 deepdish
+torch
+torchvision
+PyOpenGL 
+PyOpenGL_accelerate
+pycocotools
+pafy
+youtube-dl
