@@ -246,7 +246,7 @@ def run_mocap_image(args, bbox_detector, hand_mocap):
             img_original_bgr = cv2.imread(img_path)
             pred_output = hand_mocap.regress(img_original_bgr, None, 'rhand')
 
-            if renderer_type == "opendr":
+            if args.renderer_type == "opendr":
                 cam = np.zeros(3,)
                 cam[0] = pred_output['cam_scale']
                 cam[1:] = pred_output['cam_trans']
@@ -262,7 +262,7 @@ def run_mocap_image(args, bbox_detector, hand_mocap):
                     bg_img=img_original_bgr, bbox_scale=bbox_scale_ratio, bbox_top_left=bbox_top_left)
                 cv2.imwrite("1.png", rend_img1)
                 sys.exit(0)
-            elif renderer_type == "opengl_no_gui":
+            elif args.renderer_type == "opengl_no_gui":
                 pass
             else:
                 continue

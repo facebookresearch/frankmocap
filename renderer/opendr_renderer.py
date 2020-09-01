@@ -38,8 +38,6 @@ def render_to_origin_img(cam, verts, faces, bg_img, bbox_scale, bbox_top_left):
 
     bbox_size = 224 / bbox_scale
 
-    print(bbox_size)
-    
     scale = cam[0] * (bbox_size / inputSize)
 
     x0, y0 = bbox_top_left
