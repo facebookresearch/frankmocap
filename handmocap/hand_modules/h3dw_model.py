@@ -94,8 +94,12 @@ class H3DWModel(BaseModel):
         smplx_model_path = osp.join(opt.model_root, opt.smplx_model_file)
         self.smplx = smplx.create(
             smplx_model_path, 
-            model_type="smplx", 
-            batch_size=self.batch_size).cuda()
+            model_type = "smplx", 
+            batch_size = self.batch_size,
+            gender = 'neutral',
+            num_betas = 10,
+            use_pca = False,
+            ext='pkl').cuda()
 
         # set encoder and optimizer
         self.encoder = H3DWEncoder(opt, self.mean_params).cuda()
@@ -195,28 +199,93 @@ class H3DWModel(BaseModel):
         self.joints_3d.resize_(joints_3d.size()).copy_(joints_3d)
         self.joints_3d_weight.resize_(joints_3d_weight.size()).copy_(joints_3d_weight)
     
+    
+    def __extract_hand_output(self, output, hand_type, hand_info, top_finger_joints_type, use_cuda):
+        assert hand_type in ['left', 'right']
+
+        if hand_type == 'left':
+            wrist_idx, hand_start_idx, middle_finger_idx = 20, 25, 28
+        else:
+            wrist_idx, hand_start_idx, middle_finger_idx = 21, 40, 43
+        
+        vertices = output.vertices
+        joints = output.joints
+        vertices_shift = vertices - joints[:, hand_start_idx:hand_start_idx+1, :]
+
+        hand_verts_idx = torch.Tensor(hand_info[f'{hand_type}_hand_verts_idx']).long()
+        if use_cuda:
+            hand_verts_idx = hand_verts_idx.cuda()
+
+        hand_verts = vertices[:, hand_verts_idx, :]
+        hand_verts_shift = hand_verts - joints[:, hand_start_idx:hand_start_idx+1, :]
+
+        hand_joints = torch.cat((joints[:, wrist_idx:wrist_idx+1, :], 
+            joints[:, hand_start_idx:hand_start_idx+15, :] ), dim=1)
+
+        # add top hand joints
+        if len(top_finger_joints_type) > 0:
+            if top_finger_joints_type in ['long', 'manual']:
+                key = f'{hand_type}_top_finger_{top_finger_joints_type}_vert_idx'
+                top_joint_vert_idx = hand_info[key]
+                hand_joints = torch.cat((hand_joints, vertices[:, top_joint_vert_idx, :]), dim=1)
+            else:
+                assert top_finger_joints_type == 'ave'
+                key1 = f'{hand_type}_top_finger_{top_finger_joints_type}_vert_idx'
+                key2 = f'{hand_type}_top_finger_{top_finger_joints_type}_vert_weight'
+                top_joint_vert_idxs = hand_info[key1]
+                top_joint_vert_weight = hand_info[key2]
+                bs = vertices.size(0)
+
+                for top_joint_id, selected_verts in enumerate(top_joint_vert_idxs):
+                    top_finger_vert_idx = hand_verts_idx[np.array(selected_verts)]
+                    top_finger_verts = vertices[:, top_finger_vert_idx]
+                    # weights = torch.from_numpy(np.repeat(top_joint_vert_weight[top_joint_id]).reshape(1, -1, 1)
+                    weights = top_joint_vert_weight[top_joint_id].reshape(1, -1, 1)
+                    weights = np.repeat(weights, bs, axis=0)
+                    weights = torch.from_numpy(weights)
+                    if use_cuda:
+                        weights = weights.cuda()
+                    top_joint = torch.sum((weights * top_finger_verts),dim=1).view(bs, 1, 3)
+                    hand_joints = torch.cat((hand_joints, top_joint), dim=1)
+
+        hand_joints_shift = hand_joints - joints[:, hand_start_idx:hand_start_idx+1, :]
+
+        output = dict(
+            wrist_idx = wrist_idx,
+            hand_start_idx = hand_start_idx,
+            middle_finger_idx = middle_finger_idx,
+            vertices_shift = vertices_shift,
+            hand_vertices = hand_verts,
+            hand_vertices_shift = hand_verts_shift,
+            hand_joints = hand_joints,
+            hand_joints_shift = hand_joints_shift
+        )
+        return output
+
 
     def get_smplx_output(self, pose_params, shape_params=None):
         hand_rotation = pose_params[:, :3]
         hand_pose = pose_params[:, 3:]
-        zero_hand_rot = torch.zeros(hand_rotation.size()).float().cuda().detach()
-        zero_hand_pose = torch.zeros(hand_pose.size()).float().cuda().detach()
+        body_pose = torch.zeros((self.batch_size, 63)).float().cuda() 
+        body_pose[:, 60:] = hand_rotation # set right hand rotation
+
+        # zero_hand_rot = torch.zeros(hand_rotation.size()).float().cuda().detach()
+        # zero_hand_pose = torch.zeros(hand_pose.size()).float().cuda().detach()
         output = self.smplx(
             global_orient = self.global_orient,
-            left_hand_rot = zero_hand_rot,
-            left_hand_pose_full = zero_hand_pose,
-            right_hand_rot = hand_rotation,
-            right_hand_pose_full = hand_pose,
+            body_pose = body_pose,
+            right_hand_pose = hand_pose,
             # betas = shape_params,
             return_verts = True)
-        hand_output = self.smplx.get_hand_output(
+
+        hand_output = self.__extract_hand_output(
             output, 
             hand_type = 'right', 
             hand_info = self.hand_info,
             top_finger_joints_type = self.top_finger_joints_type, 
             use_cuda=True)
-        pred_verts = hand_output.vertices_shift
-        pred_joints_3d = hand_output.hand_joints_shift
+        pred_verts = hand_output['vertices_shift']
+        pred_joints_3d = hand_output['hand_joints_shift']
         return pred_verts, pred_joints_3d
 
 

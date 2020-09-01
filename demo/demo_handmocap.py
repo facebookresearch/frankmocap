@@ -261,6 +261,7 @@ def run_mocap_image(args, bbox_detector, hand_mocap):
                 rend_img1 = od_render.render_to_origin_img(cam, verts, faces, 
                     bg_img=img_original_bgr, bbox_scale=bbox_scale_ratio, bbox_top_left=bbox_top_left)
                 cv2.imwrite("1.png", rend_img1)
+            if f_id > 1:
                 sys.exit(0)
             elif args.renderer_type == "opengl_no_gui":
                 pass
