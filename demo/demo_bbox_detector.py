@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import sys
 import numpy as np
 import cv2
@@ -8,21 +9,8 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
-'''
-yolo_path = './PyTorch-YOLOv3'
-sys.path.append(yolo_path)
-try:
-    from models import Darknet
-    from utils.utils import non_max_suppression, rescale_boxes
-    from utils.datasets import pad_to_square,resize
-except ImportError:
-    print("Cannot find PyTorch-YOLOv3")
-'''
-
-pose2d_estimator_path = './lightweight-human-pose-estimation.pytorch/'
-pose2d_checkpoint = "./lightweight-human-pose-estimation.pytorch/checkpoint_iter_370000.pth"
-# pose2d_estimator_path = './lhpe'
-# pose2d_checkpoint = "./lhpe/checkpoint_iter_370000.pth"
+pose2d_estimator_path = './detectors/body_pose_estimator'
+pose2d_checkpoint = "./data/weights/body_pose_estimator/checkpoint_iter_370000.pth"
 sys.path.append(pose2d_estimator_path)
 
 # try:

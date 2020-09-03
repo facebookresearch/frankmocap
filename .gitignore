@@ -22,3 +22,6 @@ webvideos/
 samples/
 *.pth
 *.obj
+data/
+detectors/
+data

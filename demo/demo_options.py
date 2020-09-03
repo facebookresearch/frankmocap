@@ -5,12 +5,12 @@ class DemoOptions():
     def __init__(self):
         parser = argparse.ArgumentParser()
         
-        default_checkpoint = "../data/weights/hand_module/checkpoints_best/pose_shape_best.pth"
+        default_checkpoint = "./data/weights/hand_module/checkpoints_best/pose_shape_best.pth"
         parser.add_argument('--checkpoint', required=False, default=default_checkpoint, help='Path to pretrained checkpoint')
 
         parser.add_argument('--crop_type', type=str, default='image', choices=['hand_crop', 'no_crop'],
             help = """ 'hand_crop' means the hand are central cropped in input. (left hand should be flipped to right). 
-                        'no_crop' means perform hand detection is required to obtain hand bbox""")
+                        'no_crop' means hand detection is required to obtain hand bbox""")
 
         parser.add_argument('--input_type', type=str, default='image', choices=['image', 'video'],
             help = 'The type of input. It could be single image, sequence input (video)')
