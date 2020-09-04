@@ -74,7 +74,7 @@ def run_mocap_image(args, bbox_detector, hand_mocap):
 
 def main():
     args = DemoOptions().parse()
-    print(args)
+    # print(args)
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     assert torch.cuda.is_available(), "Current version only supports GPU"

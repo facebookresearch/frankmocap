@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import cv2
 from torchvision.transforms import transforms
-from handmocap.options.test_options import TestOptions
+from handmocap.hand_modules.test_options import TestOptions
 from handmocap.hand_modules.h3dw_model import H3DWModel
 
 
