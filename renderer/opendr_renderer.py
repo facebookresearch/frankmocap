@@ -79,17 +79,7 @@ def render_to_origin_img(cam, verts, faces, bg_img, bbox_scale, bbox_top_left):
     cam[0] = scale
 
     rend_img = render(cam, verts, faces, bg_img_new)
-    return rend_img
-
-
-def project_joints(X, camera):
-    X = X[None, :]
-    camera = camera[None, :]
-    camera = camera.reshape(-1, 1, 3)
-    X_trans = X[:, :, :2] + camera[:, :, 1:]
-    res = camera[:, :, 0] * X_trans.reshape(X_trans.shape[0], -1)
-    res = res.reshape(X_trans.shape[0], X_trans.shape[1], -1)
-    return res.squeeze()
+    return rend_img[:h, :w, :]
 
 
 colors = {
@@ -242,7 +232,7 @@ def _rotateY(points, angle):
 def simple_renderer(rn,
                     verts,
                     faces,
-                    yrot=np.radians(120),
+                    yrot=np.radians(70),
                     color=colors['light_pink'],
                     get_visible_faces=False):
     # Rendered model color

@@ -44,7 +44,7 @@ from detectors.hand_object_detector.lib.model.utils.net_utils import \
 '''
 from detectors.hand_object_detector.lib.model.utils.blob import im_list_to_blob
 from detectors.hand_object_detector.lib.model.faster_rcnn.vgg16 import vgg16
-from detectors.hand_object_detector.lib.model.faster_rcnn.resnet import resnet
+from detectors.hand_object_detector.lib.model.faster_rcnn.resnet import resnet as detector_resnet 
 
 
 class Body_Pose_Estimator(object):
@@ -230,7 +230,7 @@ class Ego_Centric_Detector(Body_Pose_Estimator):
     # part of the code comes from https://github.com/ddshan/hand_object_detector
     def __load_hand_detector(self):
         classes = np.asarray(['__background__', 'targetobject', 'hand']) 
-        fasterRCNN = resnet(classes, 101, pretrained=False, class_agnostic=False)
+        fasterRCNN = detector_resnet(classes, 101, pretrained=False, class_agnostic=False)
         fasterRCNN.create_architecture()
         self.classes = classes
 
@@ -365,12 +365,10 @@ class Ego_Centric_Detector(Body_Pose_Estimator):
         )
 
         left_bbox = bboxes[hand_types==0]
-        print('left_bbox', left_bbox.shape)
         if len(left_bbox)>0:
             hand_bbox_list[0]['left_hand'] = left_bbox[0]
 
         right_bbox = bboxes[hand_types==1]
-        print('right_bbox', right_bbox.shape)
         if len(right_bbox)>0:
             hand_bbox_list[0]['right_hand'] = right_bbox[0]
 

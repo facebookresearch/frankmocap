@@ -24,7 +24,7 @@ def run_mocap_video(args, bbox_detector, hand_mocap):
     """
     Not implemented Yet.
     """
-    pass
+    assert False, "Method not implemented Yet."
 
 
 def run_mocap_image(args, bbox_detector, hand_mocap):
@@ -39,42 +39,37 @@ def run_mocap_image(args, bbox_detector, hand_mocap):
         img_original_bgr = cv2.imread(img_path)
 
         if args.crop_type == 'hand_crop':
-            pred_output = hand_mocap.regress(img_original_bgr, None, 'rhand')
+            # hand already cropped, thererore, no need for detection
+            img_h, img_w = img_original_bgr.shape[:2]
+            body_pose_list = None
+            raw_hand_bboxes = None
+            hand_bbox_list = [ dict(right_hand = np.array([0, 0, img_w, img_h])) ]
 
-            if args.renderer_type == "opendr":
-                cam = np.zeros(3,)
-                cam[0] = pred_output['cam_scale']
-                cam[1:] = pred_output['cam_trans']
-                bbox_scale_ratio = pred_output['bbox_scale_ratio']
-                bbox_top_left = pred_output['bbox_top_left']
-                verts = pred_output['pred_vertices_origin']
-                faces = pred_output['faces']
-                img = pred_output['img_cropped']
-
-                rend_img0 = od_render.render(cam, verts, faces, bg_img=img)
-                cv2.imwrite("0.png", rend_img0)
-                rend_img1 = od_render.render_to_origin_img(cam, verts, faces, 
-                    bg_img=img_original_bgr, bbox_scale=bbox_scale_ratio, bbox_top_left=bbox_top_left)
-                cv2.imwrite("1.png", rend_img1)
-                sys.exit(0)
-            elif args.renderer_type == "opengl_no_gui":
-                pass
-            else:
-                continue
+            hand_bbox_list_new, pred_meshes_list = hand_mocap.regress(
+                img_original_bgr, hand_bbox_list, add_margin=False)
         else:            
             # Input images has other body part or hand not cropped.
             assert args.crop_type == 'no_crop'
+            # detect hand
             body_pose_list, hand_bbox_list, raw_hand_bboxes = bbox_detector.detect_hand_bbox(img_original_bgr.copy())
-
-            vis_img = visualizer.visualize(
-                input_img = img_original_bgr.copy(), 
-                hand_bbox_list = hand_bbox_list,
-                body_pose_list = body_pose_list,
-                raw_hand_bboxes = raw_hand_bboxes
-            )
-            res_img_path = osp.join(args.render_out_dir, img_name)
-            g_utils.make_subdir(res_img_path)
-            cv2.imwrite(res_img_path, vis_img)
+            # hand module inference
+            hand_bbox_list_new, pred_meshes_list = hand_mocap.regress(
+                img_original_bgr, hand_bbox_list, add_margin=True)
+            
+        vis_img = visualizer.visualize(
+            input_img = img_original_bgr.copy(), 
+            hand_bbox_list = hand_bbox_list,
+            body_pose_list = body_pose_list,
+            raw_hand_bboxes = raw_hand_bboxes,
+            pred_meshes_list = pred_meshes_list, 
+            vis_raw_hand_bbox = (args.view_type != 'ego_centric'),
+            vis_body_pose = (args.view_type != 'ego_centric'),
+            vis_hand_bbox = (args.crop_type != 'hand_crop')
+        )
+        res_img_path = osp.join(args.render_out_dir, img_name)
+        g_utils.make_subdir(res_img_path)
+        cv2.imwrite(res_img_path, vis_img)
+        print(f"Processed : {img_name}")
    
 
 def main():

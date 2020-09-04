@@ -174,32 +174,7 @@ class H3DWModel(BaseModel):
         input_img = input['img']
         self.input_img.resize_(input_img.size()).copy_(input_img)
 
-    def set_input(self, input):
-        # image
-        input_img = input['img']
-        self.input_img.resize_(input_img.size()).copy_(input_img)
 
-        # joints 2d
-        keypoints = input['keypoints']
-        keypoints_weights = input['keypoints_weights']
-        self.keypoints.resize_(keypoints.size()).copy_(keypoints)
-        self.keypoints_weights.resize_(
-            keypoints_weights.size()).copy_(keypoints_weights)
-
-        # mano pose
-        mano_pose = input['mano_pose']
-        mano_params_weight = input['mano_params_weight']
-        self.gt_pose_params.resize_(mano_pose.size()).copy_(mano_pose)
-        self.mano_params_weight.resize_(
-            mano_params_weight.size()).copy_(mano_params_weight)
-        
-        # joints 3d
-        joints_3d = input['joints_3d']
-        joints_3d_weight = input['joints_3d_weight']
-        self.joints_3d.resize_(joints_3d.size()).copy_(joints_3d)
-        self.joints_3d_weight.resize_(joints_3d_weight.size()).copy_(joints_3d_weight)
-    
-    
     def __extract_hand_output(self, output, hand_type, hand_info, top_finger_joints_type, use_cuda):
         assert hand_type in ['left', 'right']
 
