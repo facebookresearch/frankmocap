@@ -29,6 +29,24 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.data.datasets import register_coco_instances
 
 
+# Type-aware hand (hand-object) hand detector
+hand_object_detector_path = './detectors/hand_object_detector'
+sys.path.append(hand_object_detector_path)
+from model.utils.config import cfg as cfgg
+from detectors.hand_object_detector.lib.roi_data_layer.roidb import combined_roidb
+from detectors.hand_object_detector.lib.roi_data_layer.roibatchLoader import roibatchLoader
+from detectors.hand_object_detector.lib.model.rpn.bbox_transform import clip_boxes
+from detectors.hand_object_detector.lib.model.roi_layers import nms
+from detectors.hand_object_detector.lib.model.rpn.bbox_transform import bbox_transform_inv
+'''
+from detectors.hand_object_detector.lib.model.utils.net_utils import \
+     save_net, load_net, vis_detections, vis_detections_PIL, vis_detections_filtered_objects_PIL, vis_detections_filtered_objects # (1) here add a function to viz
+'''
+from detectors.hand_object_detector.lib.model.utils.blob import im_list_to_blob
+from detectors.hand_object_detector.lib.model.faster_rcnn.vgg16 import vgg16
+from detectors.hand_object_detector.lib.model.faster_rcnn.resnet import resnet
+
+
 class Body_Pose_Estimator(object):
     """
     Hand Detector for third-view input.
@@ -198,14 +216,165 @@ class Third_View_Detector(Body_Pose_Estimator):
         return body_pose_list, hand_bbox_list, raw_hand_bboxes
     
 
-class Ego_Centric_Detector(object):
+class Ego_Centric_Detector(Body_Pose_Estimator):
     """
     Hand Detector for ego-centric input.
     It uses type-aware hand detector:
     (https://github.com/ddshan/hand_object_detector)
     """
     def __init__(self):
-        pass
+        super(Ego_Centric_Detector, self).__init__()
+        self.__load_hand_detector()
+    
+
+    # part of the code comes from https://github.com/ddshan/hand_object_detector
+    def __load_hand_detector(self):
+        classes = np.asarray(['__background__', 'targetobject', 'hand']) 
+        fasterRCNN = resnet(classes, 101, pretrained=False, class_agnostic=False)
+        fasterRCNN.create_architecture()
+        self.classes = classes
+
+        checkpoint_path = "data/weights/hand_detector/faster_rcnn_1_8_132028.pth"
+        checkpoint = torch.load(checkpoint_path)
+        assert osp.exists(checkpoint_path), "Hand checkpoint does not exist"
+        fasterRCNN.load_state_dict(checkpoint['model'])
+        if 'pooling_mode' in checkpoint.keys():
+            cfgg.POOLING_MODE = checkpoint['pooling_mode']
+        
+        fasterRCNN.cuda()
+        fasterRCNN.eval()
+        self.hand_detector = fasterRCNN
+    
+
+    # part of the code comes from https://github.com/ddshan/hand_object_detector/demo.py
+    def __get_image_blob(self, im):
+        im_orig = im.astype(np.float32, copy=True)
+        pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
+        im_orig -= pixel_means
+
+        im_shape = im_orig.shape
+        im_size_min = np.min(im_shape[0:2])
+        im_size_max = np.max(im_shape[0:2])
+
+        processed_ims = list()
+        im_scale_factors = list()
+
+        test_scales = [600,]
+        for target_size in test_scales:
+            im_scale = float(target_size) / float(im_size_min)
+            # Prevent the biggest axis from being more than MAX_SIZE
+            if np.round(im_scale * im_size_max) > cfgg.TEST.MAX_SIZE:
+                im_scale = float(cfgg.TEST.MAX_SIZE) / float(im_size_max)
+            im = cv2.resize(im_orig, None, None, fx=im_scale, fy=im_scale,
+                interpolation=cv2.INTER_LINEAR)
+            im_scale_factors.append(im_scale)
+            processed_ims.append(im)
+
+        # Create a blob to hold the input images
+        blob = im_list_to_blob(processed_ims)
+        return blob, np.array(im_scale_factors)
+
+
+    # part of the code comes from https://github.com/ddshan/hand_object_detector/demo.py
+    def __get_raw_hand_bbox(self, img):
+        with torch.no_grad():
+            im_data = torch.FloatTensor(1).cuda()
+            im_info = torch.FloatTensor(1).cuda()
+            num_boxes = torch.LongTensor(1).cuda()
+            gt_boxes = torch.FloatTensor(1).cuda()
+            box_info = torch.FloatTensor(1).cuda()
+
+            im_blob, im_scales = self.__get_image_blob(img)
+
+            im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
+
+            im_data_pt = torch.from_numpy(im_blob)
+            im_data_pt = im_data_pt.permute(0, 3, 1, 2)
+            im_info_pt = torch.from_numpy(im_info_np)
+
+            im_data.resize_(im_data_pt.size()).copy_(im_data_pt)
+            im_info.resize_(im_info_pt.size()).copy_(im_info_pt)
+            gt_boxes.resize_(1, 1, 5).zero_()
+            num_boxes.resize_(1).zero_()
+            box_info.resize_(1, 1, 5).zero_() 
+
+            # forward
+            rois, cls_prob, bbox_pred, \
+            rpn_loss_cls, rpn_loss_box, \
+            RCNN_loss_cls, RCNN_loss_bbox, \
+            rois_label, loss_list = self.hand_detector(im_data, im_info, gt_boxes, num_boxes, box_info) 
+
+            scores = cls_prob.data
+            boxes = rois.data[:, :, 1:5]
+
+            # hand side info (left/right)
+            lr_vector = loss_list[2][0].detach()
+            lr = torch.sigmoid(lr_vector) > 0.5
+            lr = lr.squeeze(0).float()
+
+            box_deltas = bbox_pred.data
+            stds = [0.1, 0.1, 0.2, 0.2]
+            means = [0.0, 0.0, 0.0, 0.0]
+            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(stds).cuda() \
+                + torch.FloatTensor(means).cuda()
+            box_deltas = box_deltas.view(1, -1, 4 * len(self.classes))
+
+            pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
+            pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
+
+            pred_boxes /= im_scales[0]
+            scores = scores.squeeze()
+            pred_boxes = pred_boxes.squeeze()
+
+            thresh_hand = 0.5
+            j = 2
+            inds = torch.nonzero(scores[:, j]>thresh_hand, as_tuple=False).view(-1)
+
+            if inds.numel()>0:
+                cls_boxes = pred_boxes[inds][:, j*4 : (j+1)*4]
+                cls_scores = scores[:,j][inds]
+
+                _, order = torch.sort(cls_scores, 0, True)
+
+                lr = lr[inds][order]
+                cls_boxes = cls_boxes[order]
+                cls_scores = cls_scores[order]
+
+                keep = nms(cls_boxes, cls_scores, cfgg.TEST.NMS) # cfgg.TEST.NMS : 0.3
+                cls_boxes = cls_boxes[keep]
+                lr_selected = lr[keep]
+
+                cls_boxes_np = cls_boxes.detach().cpu().numpy()
+                lr_np = lr_selected.detach().cpu().numpy()
+
+                return cls_boxes_np, lr_np.squeeze()
+            else:
+                return None, None
+        
+
+    def detect_hand_bbox(self, img):
+        bboxes, hand_types = self.__get_raw_hand_bbox(img)
+        assert bboxes.shape[0] <= 2, "Current version only supports one person per image"
+
+        hand_bbox_list = list()
+        hand_bbox_list.append(
+            dict(
+                left_hand = None,
+                right_hand = None
+            )
+        )
+
+        left_bbox = bboxes[hand_types==0]
+        print('left_bbox', left_bbox.shape)
+        if len(left_bbox)>0:
+            hand_bbox_list[0]['left_hand'] = left_bbox[0]
+
+        right_bbox = bboxes[hand_types==1]
+        print('right_bbox', right_bbox.shape)
+        if len(right_bbox)>0:
+            hand_bbox_list[0]['right_hand'] = right_bbox[0]
+
+        return None, hand_bbox_list, None
 
 
 class HandBboxDetector(object):
