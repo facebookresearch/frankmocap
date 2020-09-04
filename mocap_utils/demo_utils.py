@@ -74,5 +74,5 @@ def setup_input(args):
                 assert False
     else:
         img_exts = ('jpg', 'png', 'jpeg', 'bmp')
-        image_list = g_utils.get_all_files(args.image_path, img_exts, "full") 
+        image_list = g_utils.get_all_files(args.input_image_dir, img_exts, "relative") 
         return image_list, None

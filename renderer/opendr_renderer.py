@@ -13,6 +13,38 @@ from opendr.renderer import ColoredRenderer
 from opendr.lighting import LambertianPointLight
 
 
+def draw_keypoints(image, kps, color=(0,0,255), radius=5, check_exist=False):
+    # recover color 
+    if color == 'red':
+        color = (0, 0, 255)
+    elif color == 'green':
+        color = (0, 255, 0)
+    elif color == 'blue':
+        color = (255, 0, 0)
+    else:
+        assert isinstance(color, tuple) and len(color) == 3
+
+    # draw keypoints
+    res_img = image.copy()
+    for i in range(kps.shape[0]):
+        x, y = kps[i][:2].astype(np.int32)
+        if check_exist:
+            score = kps[i][2]
+        else:
+            score = 1.0
+        # print(i, score)
+        if score > 0.0:
+            cv2.circle(res_img, (x,y), radius=radius, color=color, thickness=-1)
+    return res_img.astype(np.uint8)
+
+
+def draw_bbox(image, bbox, color=(0,0,255), thickness=3):
+    x0, y0 = int(bbox[0]), int(bbox[1])
+    x1, y1 = int(bbox[2]), int(bbox[3])
+    res_img = cv2.rectangle(image.copy(), (x0,y0), (x1,y1), color=color, thickness=thickness)
+    return res_img.astype(np.uint8)
+
+
 def render(cam, verts, faces, bg_img):
     f = 5
     tz = f / cam[0]

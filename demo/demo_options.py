@@ -14,6 +14,10 @@ class DemoOptions():
 
         parser.add_argument('--input_type', type=str, default='image', choices=['image', 'video'],
             help = 'The type of input. It could be single image, sequence input (video)')
+
+        parser.add_argument('--view_type', type=str, default='third_view', choices=['third_view', 'ego_centric'],
+            help = "The view type of input. It could be ego-centric (such as epic kitchen) or third view")
+
         parser.add_argument('--video_type', type=str, default='frame', choices=['frame', 'video', 'url'], 
             help = "If the input type is video, the type could be frame, video (eg.*.mp4), or url (youtube url)")
         parser.add_argument('--video_path', type=str, default=None, help="""Path of video or first image in a folder
@@ -21,7 +25,8 @@ class DemoOptions():
                             . Can also be used to load a single image (example: (path)/out1.jpg).""")
         parser.add_argument('--video_url', type=str, default=None, help='URL of YouTube video, or image.')
         parser.add_argument('--download', '-d', action='store_true', help='Download YouTube video first (in webvideo folder), and process it')
-        parser.add_argument('--image_path', type=str, default=None, help='Path of directories that stores the input image')
+
+        parser.add_argument('--input_image_dir', type=str, default=None, help='Path of directories that stores the input image')
 
         parser.add_argument("--renderer_type", type=str, default="opendr", choices=['opendr', 'opengl_gui', 'opengl_no_gui'], 
             help="Type of renderer used to render the predicted mesh")
