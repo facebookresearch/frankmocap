@@ -24,3 +24,4 @@ tensorboardX
 tqdm
 jinja2
 pascal_voc_writer
+smplx

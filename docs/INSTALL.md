@@ -1,5 +1,24 @@
 ## Installation
 
+### Downloading data
+- Downloading [data.zip](https://drive.google.com/file/d/1m5t7mAHt8-m5rLOxwd7M2DZKeqI2J6N6/view?usp=sharing) and unzip it. The data/ folder should looks like:
+```
+data/
+├── hand_module
+│   └── mean_mano_params.pkl
+│   └── SMPLX_HAND_INFO.pkl
+├── smplx
+│   └── SMPLX_NEUTRAL.pkl
+├── weights
+│    └── hand_module
+│    │       └── checkpoints_best/pose_shape_best.pth 
+│    ├── hand_detector
+     │       └── faster_rcnn_1_8_132028.pth  
+     │       └── model_0529999.pth
+│    ├── body_pose_estimator
+│            └── checkpoint_iter_370000.pth
+```
+- Downloading [samples.zip](https://drive.google.com/file/d/1sX4HBeHQEE0LWbOXMjemHZizB_ZJM01p/view?usp=sharing) and unzip it. It contains sample images
 
 ### Requirements
 - Linux with at least one GPU.

@@ -25,3 +25,5 @@ samples/
 data/
 detectors/
 data
+samples_all/
+*.zip
