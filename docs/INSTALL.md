@@ -30,9 +30,9 @@ data/
     - ```pip intall -r doc/requirements.txt``
 - Detectron-2: [install](https://github.com/facebookresearch/detectron2/blob/master/INSTALL.md)
 - Hand Detector: We use hand detector provided by [100DOH](https://fouheylab.eecs.umich.edu/~dandans/projects/100DOH/download.html). Run following commands to install:
-    - ```sh scripts install_hand_detectors.sh ```
+    - ```sh scripts/install_hand_detectors.sh ```
 - 2D Body Pose estimator: Install with the following commands
-    - ```sh scripts install_pose2d.sh```
+    - ```sh scripts/install_pose2d.sh```
 
 
 ### Downloading data
