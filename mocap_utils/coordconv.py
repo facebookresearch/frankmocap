@@ -32,6 +32,7 @@ def convert_smpl_to_bbox(data3D, scale, trans, bAppTransFirst=False):
 
     return data3D
 
+
 def convert_bbox_to_oriIm(data3D, boxScale_o2n, bboxTopLeft, imgSizeW, imgSizeH):
     hmrIntputSize_half = 224 *0.5
 

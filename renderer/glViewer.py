@@ -3222,8 +3222,8 @@ def drawbody_joint22(joints,  color, normal=None, ignore_root=False):
 
 
 # The following is for drawbody_joint73 (Holden's format)
-# sys.path.append('../motion/')
-# from Quaternions import Quaternions
+sys.path.append('../motion/')
+from Quaternions import Quaternions
 
 # skel_list is a list of skeletonElement
 # each skeletonElement: (73,frameNum)
@@ -3232,117 +3232,117 @@ def drawbody_joint22(joints,  color, normal=None, ignore_root=False):
 # Input
 #   - initRot: Quaternion for the first frame in global coordinate
 #   - initTrans: 3x1 vector or np array
-# def set_Holden_Data_73(skel_list, ignore_root=False, initRot = None, initTrans=None, bIsGT= False):
-#     #global HOLDEN_DATA_SCALING
+def set_Holden_Data_73(skel_list, ignore_root=False, initRot = None, initTrans=None, bIsGT= False):
+    #global HOLDEN_DATA_SCALING
 
-#     skel_list_output = []
-#     #footsteps_output = []
+    skel_list_output = []
+    #footsteps_output = []
 
-#     for ai in range(len(skel_list)):
-#         anim = np.swapaxes(skel_list[ai].copy(), 0, 1)  # frameNum x 73
+    for ai in range(len(skel_list)):
+        anim = np.swapaxes(skel_list[ai].copy(), 0, 1)  # frameNum x 73
 
-#         if anim.shape[1]==73:
-#             joints, root_x, root_z, root_r = anim[:,:-7], anim[:,-7], anim[:,-6], anim[:,-5]
-#         elif anim.shape[1]==69:
-#             joints, root_x, root_z, root_r = anim[:,:-3], anim[:,-3], anim[:,-2], anim[:,-1]
-#         joints = joints.reshape((len(joints), -1, 3)) #(frameNum,66) -> (frameNum, 22, 3)
+        if anim.shape[1]==73:
+            joints, root_x, root_z, root_r = anim[:,:-7], anim[:,-7], anim[:,-6], anim[:,-5]
+        elif anim.shape[1]==69:
+            joints, root_x, root_z, root_r = anim[:,:-3], anim[:,-3], anim[:,-2], anim[:,-1]
+        joints = joints.reshape((len(joints), -1, 3)) #(frameNum,66) -> (frameNum, 22, 3)
 
-#         if initRot is None:
-#             rotation = Quaternions.id(1)
-#         else:
-#             rotation = initRot[ai]
-#         offsets = []
+        if initRot is None:
+            rotation = Quaternions.id(1)
+        else:
+            rotation = initRot[ai]
+        offsets = []
 
-#         if initTrans is None:
-#             translation = np.array([[0,0,0]])   #1x3
-#         else:
-#             translation = np.array(initTrans[ai])
-#             if translation.shape[0]==3:
-#                 translation = np.swapaxes(translation,0,1)
-
-
-#         if not ignore_root:
-#             for i in range(len(joints)):
-#                 joints[i,:,:] = rotation * joints[i]
-#                 joints[i,:,0] = joints[i,:,0] + translation[0,0]
-#                 joints[i,:,2] = joints[i,:,2] + translation[0,2]
-#                 rotation = Quaternions.from_angle_axis(-root_r[i], np.array([0,1,0])) * rotation
-#                 offsets.append(rotation * np.array([0,0,1]))
-#                 translation = translation + rotation * np.array([root_x[i], 0, root_z[i]])
-
-#         #joints dim:(frameNum, 22, 3)
-#         #Scaling
-#         joints[:,:,:] = joints[:,:,:] * HOLDEN_DATA_SCALING#5 #m -> cm
-#         joints[:,:,1] = joints[:,:,1] *-1 #Flip Y axis
-
-#         #Reshaping
-#         joints = joints.reshape(joints.shape[0], joints.shape[1]*joints.shape[2]) # frameNum x 66
-#         joints =  np.swapaxes(joints, 0, 1)  # 66  x frameNum
-
-#         skel_list_output.append(joints)
-#         #footsteps_output.append(anim[:,-4:])
+        if initTrans is None:
+            translation = np.array([[0,0,0]])   #1x3
+        else:
+            translation = np.array(initTrans[ai])
+            if translation.shape[0]==3:
+                translation = np.swapaxes(translation,0,1)
 
 
-#     #adjust length
-#     length = min( [ i.shape[1] for i in skel_list_output])
-#     skel_list_output = [ f[:,:length] for f in skel_list_output ]
+        if not ignore_root:
+            for i in range(len(joints)):
+                joints[i,:,:] = rotation * joints[i]
+                joints[i,:,0] = joints[i,:,0] + translation[0,0]
+                joints[i,:,2] = joints[i,:,2] + translation[0,2]
+                rotation = Quaternions.from_angle_axis(-root_r[i], np.array([0,1,0])) * rotation
+                offsets.append(rotation * np.array([0,0,1]))
+                translation = translation + rotation * np.array([root_x[i], 0, root_z[i]])
 
-#     skel_list_output = np.asarray(skel_list_output)
-#     #return skel_list_output #(skelNum, 66, frameNum)
-#     #showSkeleton(skel_list_output)
-#     setSkeleton(skel_list_output, bIsGT)
+        #joints dim:(frameNum, 22, 3)
+        #Scaling
+        joints[:,:,:] = joints[:,:,:] * HOLDEN_DATA_SCALING#5 #m -> cm
+        joints[:,:,1] = joints[:,:,1] *-1 #Flip Y axis
+
+        #Reshaping
+        joints = joints.reshape(joints.shape[0], joints.shape[1]*joints.shape[2]) # frameNum x 66
+        joints =  np.swapaxes(joints, 0, 1)  # 66  x frameNum
+
+        skel_list_output.append(joints)
+        #footsteps_output.append(anim[:,-4:])
 
 
-# # traj_list is a list of 3 dim tran+rot infor
-# # each trajectory data: (3,frameNum)
-# # D. Holden's Data type
-# # 3 dim = 3 (X_velocity,Z_velocity,Rot_Velocity)
-# def set_Holden_Trajectory_3(traj_list, initRot = None, initTrans=None ):
+    #adjust length
+    length = min( [ i.shape[1] for i in skel_list_output])
+    skel_list_output = [ f[:,:length] for f in skel_list_output ]
 
-#     global HOLDEN_DATA_SCALING
+    skel_list_output = np.asarray(skel_list_output)
+    #return skel_list_output #(skelNum, 66, frameNum)
+    #showSkeleton(skel_list_output)
+    setSkeleton(skel_list_output, bIsGT)
 
-#     traj_list_output = []
 
-#     for ai in range(len(traj_list)):
+# traj_list is a list of 3 dim tran+rot infor
+# each trajectory data: (3,frameNum)
+# D. Holden's Data type
+# 3 dim = 3 (X_velocity,Z_velocity,Rot_Velocity)
+def set_Holden_Trajectory_3(traj_list, initRot = None, initTrans=None ):
 
-#         root_x, root_z, root_r = traj_list[ai][0,:], traj_list[ai][1,:], traj_list[ai][2,:]
+    global HOLDEN_DATA_SCALING
 
-#         if initRot is None:
-#             rotation = Quaternions.id(1)
-#         else:
-#             rotation = initRot[ai]
-#         offsets = []
+    traj_list_output = []
 
-#         if initTrans is None:
-#             translation = np.array([[0,0,0]])   #1x3
-#         else:
-#             translation = np.array(initTrans[ai])
-#             if translation.shape[0]==3:
-#                 translation = np.swapaxes(translation,0,1)
+    for ai in range(len(traj_list)):
 
-#         # joints = np.array([0,0,0])
-#         # joints = np.repeat(joints, )
-#         # joints = joints.reshape((len(joints), -1, 3)) #(frameNum,66) -> (frameNum, 22, 3)
-#         joints = np.zeros((len(root_x),2,3))        #(frames, 2,3) for original and directionPt
-#         joints[:,1,2] = 10 #Normal direction
+        root_x, root_z, root_r = traj_list[ai][0,:], traj_list[ai][1,:], traj_list[ai][2,:]
 
-#         for i in range(len(joints)):
-#             joints[i,:,:] = rotation * joints[i]
-#             joints[i,:,0] = joints[i,:,0] + translation[0,0]
-#             joints[i,:,2] = joints[i,:,2] + translation[0,2]
-#             rotation = Quaternions.from_angle_axis(-root_r[i], np.array([0,1,0])) * rotation
-#             offsets.append(rotation * np.array([0,0,1]))
-#             translation = translation + rotation * np.array([root_x[i], 0, root_z[i]])
+        if initRot is None:
+            rotation = Quaternions.id(1)
+        else:
+            rotation = initRot[ai]
+        offsets = []
 
-#         #Reshaping
-#         joints = joints.reshape(joints.shape[0], joints.shape[1]*joints.shape[2]) # (frameNum,jointDim,3) -> (frameNum, jointDim*3)
-#         joints =  np.swapaxes(joints, 0, 1)  # jointDim*3  x frameNum
+        if initTrans is None:
+            translation = np.array([[0,0,0]])   #1x3
+        else:
+            translation = np.array(initTrans[ai])
+            if translation.shape[0]==3:
+                translation = np.swapaxes(translation,0,1)
 
-#         joints = joints*HOLDEN_DATA_SCALING
-#         traj_list_output.append(joints)
+        # joints = np.array([0,0,0])
+        # joints = np.repeat(joints, )
+        # joints = joints.reshape((len(joints), -1, 3)) #(frameNum,66) -> (frameNum, 22, 3)
+        joints = np.zeros((len(root_x),2,3))        #(frames, 2,3) for original and directionPt
+        joints[:,1,2] = 10 #Normal direction
 
-#     traj_list_output = np.asarray(traj_list_output)
-#     setTrajectory(traj_list_output)         #(trajNum, joitnDim*3, frames)
+        for i in range(len(joints)):
+            joints[i,:,:] = rotation * joints[i]
+            joints[i,:,0] = joints[i,:,0] + translation[0,0]
+            joints[i,:,2] = joints[i,:,2] + translation[0,2]
+            rotation = Quaternions.from_angle_axis(-root_r[i], np.array([0,1,0])) * rotation
+            offsets.append(rotation * np.array([0,0,1]))
+            translation = translation + rotation * np.array([root_x[i], 0, root_z[i]])
+
+        #Reshaping
+        joints = joints.reshape(joints.shape[0], joints.shape[1]*joints.shape[2]) # (frameNum,jointDim,3) -> (frameNum, jointDim*3)
+        joints =  np.swapaxes(joints, 0, 1)  # jointDim*3  x frameNum
+
+        joints = joints*HOLDEN_DATA_SCALING
+        traj_list_output.append(joints)
+
+    traj_list_output = np.asarray(traj_list_output)
+    setTrajectory(traj_list_output)         #(trajNum, joitnDim*3, frames)
 
 """
     input:

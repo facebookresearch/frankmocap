@@ -1,5 +1,0 @@
-opendr
-visdom
-dominate
-opencv-python
-deepdish

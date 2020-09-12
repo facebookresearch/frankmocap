@@ -1,3 +1,18 @@
+# Yu's update for Hand demo
+* Checkout to ''develop'' branch
+    - Run the following command  
+    ```
+    git checkout develop
+    ```
+* Download data and samples images, install dependency by following ''docs/INSTALL.md''
+* Run demo.
+    - Run the following command  
+    ```
+    sh demo.sh
+    ```
+
+
+
 # Han's update for demo
 * Before starting this demo, please try eft mocap (body mocap) first.
 * Current demo uses [2D keypoint detector](lightweight-human-pose-estimation.pytorch) to find hand bbox
@@ -14,7 +29,6 @@
     #Alternatively, you can specify a video input
     python -m demo.demo_handmocap --vPath ./sample/han_long.mp4
 ```
-    - in gui 3D view, press 'C' to see the scene in camera view
 
 
 # Old README below
