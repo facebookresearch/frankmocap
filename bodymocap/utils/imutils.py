@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
 
 # Original code from SPIN: https://github.com/nkolot/SPIN
 

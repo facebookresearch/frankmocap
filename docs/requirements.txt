@@ -7,7 +7,7 @@ pycocotools
 pafy
 youtube-dl
 scipy
-pillow==6.1.0
+pillow
 easydict
 cython
 cffi

@@ -1,6 +1,5 @@
 # Original code from SPIN: https://github.com/nkolot/SPIN
 
-# Copyright (c) Facebook, Inc. and its affiliates.
 
 import torch
 import numpy as np
