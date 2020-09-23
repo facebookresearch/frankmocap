@@ -1,6 +1,6 @@
 # Body Motion Capture Demo
 
-For our body mocap module, we use (HMR)[https://akanazawa.github.io/hmr/] model, by borrowing the code from [SPIN](https://github.com/nkolot/SPIN) with modifications. We trained the model with [EFT dataset](https://github.com/facebookresearch/eft), showing the SOTA peformance among single-image based methods.
+For our body mocap module, we use [HMR](https://akanazawa.github.io/hmr/) network architecture, by borrowing the implementation from [SPIN](https://github.com/nkolot/SPIN) with modifications. We trained the model with [EFT dataset](https://github.com/facebookresearch/eft), showing the SOTA peformance among single-image based methods.
 
 <p>
     <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/eft_bodymocap.gif" height="256">
