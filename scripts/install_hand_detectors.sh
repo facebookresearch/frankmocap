@@ -15,7 +15,8 @@ python setup.py build develop
 cd ../../
 
 # Install 100-DOH hand-only detectors
-git clone git@github.com:ddshan/hand_detector.d2.git
+# git clone git@github.com:ddshan/hand_detector.d2.git
+git clone https://github.com/ddshan/hand_detector.d2.git
 mv hand_detector.d2 hand_only_detector
 
 # downloading weights
