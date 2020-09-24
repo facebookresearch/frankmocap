@@ -1,4 +1,4 @@
-# FrankMocap: An Easy-to-use Single View 3D Hand+Body Pose Estimator
+# FrankMocap: A Strong and Easy-to-use Single View 3D Hand+Body Pose Estimator
 
 FrankMocap pursues an easy-to-use single view 3D motion capture system developed by Facebook AI Research (FAIR). FrankMocap provides state-of-the-art 3D pose estimation outputs for body, hand, and body+hands in a single system. The core objective of FrankMocap is to democratize the 3D human pose estimation technology, enabling anyone (researchers, engineers, developers, artists, and others) can easily obtain 3D motion capture outputs from videos and images.
 
