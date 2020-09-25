@@ -16,6 +16,7 @@ from handmocap.hand_mocap_api import HandMocap
 from handmocap.hand_bbox_detector import HandBboxDetector
 
 from renderer.viewer2D import ImShow
+import time
 # import renderer.viewer2D as viewer2D
 # import renderer.opendr_renderer as od_render
 
@@ -120,7 +121,7 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
             img_original_bgr, 
             pred_mesh_list = pred_mesh_list, 
             hand_bbox_list = hand_bbox_list)
-        
+
         # save the image (we can make an option here)
         if args.out_dir is not None:
             demo_utils.save_res_img(args.out_dir, image_path, res_img)

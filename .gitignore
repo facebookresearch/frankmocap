@@ -30,3 +30,4 @@ samples_all/
 extra_data/
 sample_data/
 mocap_output/
+demo.sh

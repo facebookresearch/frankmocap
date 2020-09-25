@@ -37,13 +37,22 @@ class Pytorch3dRenderer(object):
         # renderer for large objects, such as whole body.
         self.render_size_large = 700
         lights = PointLights(
-            ambient_color = [[0.7, 0.7, 0.7],],
-            diffuse_color = [[0.8, 0.8, 0.8],],
+            ambient_color = [[1.0, 1.0, 1.0],],
+            diffuse_color = [[1.0, 1.0, 1.0],],
             device=self.device, location=[[1.0, 1.0, -30]])
         self.renderer_large = self.__get_renderer(self.render_size_large, lights)
 
         # renderer for small objects, such as whole body.
-        self.render_size_small = 300
+        self.render_size_medium = 400
+        lights = PointLights(
+            ambient_color = [[0.5, 0.5, 0.5],],
+            diffuse_color = [[0.5, 0.5, 0.5],],
+            device=self.device, location=[[1.0, 1.0, -30]])
+        self.renderer_medium = self.__get_renderer(self.render_size_medium, lights)
+
+
+        # renderer for small objects, such as whole body.
+        self.render_size_small = 200
         lights = PointLights(
             ambient_color = [[0.5, 0.5, 0.5],],
             diffuse_color = [[0.5, 0.5, 0.5],],
@@ -100,14 +109,20 @@ class Pytorch3dRenderer(object):
         width = x1 - x0
         height = y1 - y0
 
-        if max(height, width) > self.render_size_small:
-            # print("Using large size renderer")
-            render_size = self.render_size_large
-            renderer = self.renderer_large
-        else:
+        bbox_size = max(height, width)
+        if bbox_size <= self.render_size_small:
             # print("Using small size renderer")
             render_size = self.render_size_small
             renderer = self.renderer_small
+        else:
+            if bbox_size <= self.render_size_medium:
+                # print("Using medium size renderer")
+                render_size = self.render_size_medium
+                renderer = self.renderer_medium
+            else:
+                # print("Using large size renderer")
+                render_size = self.render_size_large
+                renderer = self.renderer_large
         
         # padding the tight bbox
         margin = int(max(width, height) * 0.1)
