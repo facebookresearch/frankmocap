@@ -77,7 +77,7 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
     for i in range(len(pred_body_list)):
         body_info = pred_body_list[i]
         hand_info = pred_hand_list[i]
-        if body_info is None or hand_info is None:
+        if body_info is None:
             integral_output_list.append(None)
             continue
     
@@ -85,7 +85,7 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         pred_betas = torch.from_numpy(body_info['pred_betas']).cuda()
         pred_rotmat = torch.from_numpy(body_info['pred_rotmat']).cuda()
 
-        if hand_info['right_hand'] is not None:
+        if hand_info is not None and hand_info['right_hand'] is not None:
             right_hand_pose = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:, 3:]).cuda()
             right_hand_global_orient = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:,: 3]).cuda()
             right_hand_local_orient = transfer_hand_wrist(
@@ -94,7 +94,7 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         else:
             right_hand_pose = torch.from_numpy(np.zeros( (1,45) , dtype= np.float32)).cuda()
 
-        if hand_info['left_hand'] is not None:
+        if hand_info is not None and hand_info['left_hand'] is not None:
             left_hand_pose = torch.from_numpy(hand_info['left_hand']['pred_hand_pose'][:, 3:]).cuda()
             left_hand_global_orient = torch.from_numpy(hand_info['left_hand']['pred_hand_pose'][:, :3]).cuda()
             left_hand_local_orient = transfer_hand_wrist(smplx_model, pred_rotmat[0], left_hand_global_orient, 'left_hand', 'l2g')

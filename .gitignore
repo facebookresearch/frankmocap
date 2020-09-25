@@ -31,3 +31,4 @@ extra_data/
 sample_data/
 mocap_output/
 demo.sh
+demo_multi.sh
