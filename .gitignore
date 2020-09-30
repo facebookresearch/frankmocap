@@ -32,4 +32,5 @@ sample_data/
 mocap_output/
 demo.sh
 demo_multi.sh
-mocap_utils/frame_to_video_direct.py
+mocap_utils/frame_to_video.py
+mocap_utils/frame_to_gif.py
