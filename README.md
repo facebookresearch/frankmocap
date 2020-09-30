@@ -23,9 +23,6 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
     <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/frankmocap_wholebody.gif" height="200">
 </p>
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/video_01.gif" height="200">
-</p>
-<p>
     <img src="https://penincillin.github.io/frank_mocap/video_02.gif" height="200">
 </p>
 
