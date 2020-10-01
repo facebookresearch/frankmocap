@@ -45,7 +45,7 @@ def __get_input_type(args):
     video_exts = ('mp4', 'avi', 'mov')
     extension = osp.splitext(args.input_path)[1][1:]
 
-    if extension in video_exts:
+    if extension.lower() in video_exts:
         input_type ='video'
     elif osp.isdir(args.input_path):
         file_list = os.listdir(args.input_path)
@@ -54,7 +54,7 @@ def __get_input_type(args):
         if extension == 'json':
             input_type ='bbox_dir'
         else:
-            assert extension in image_exts
+            assert extension.lower() in image_exts
             input_type ='image_dir'
     elif args.input_path =='webcam':
         input_type ='webcam'
