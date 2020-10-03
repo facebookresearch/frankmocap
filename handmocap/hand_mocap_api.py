@@ -28,7 +28,7 @@ class HandMocap:
         self.opt.single_branch = True
         self.opt.main_encoder = "resnet50"
         # self.opt.data_root = "/home/hjoo/dropbox/hand_yu/data/"
-        self.opt.model_root = "./extra_data"
+        self.opt.model_root = os.path.dirname(smpl_dir)
         self.opt.smplx_model_file = os.path.join(smpl_dir,'SMPLX_NEUTRAL.pkl')
 
         self.opt.batchSize = 1

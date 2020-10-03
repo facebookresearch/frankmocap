@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
+import os
 import cv2
 import sys
 import torch
@@ -21,7 +22,7 @@ class BodyMocap(object):
     def __init__(self, regressor_checkpoint, smpl_dir, device=torch.device('cuda'), use_smplx=False):
 
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
+        extra_data_dir = os.path.dirname(smpl_dir)
         # Load parametric model (SMPLX or SMPL)
         if use_smplx:
             smplModelPath = smpl_dir + '/SMPLX_NEUTRAL.pkl'
@@ -33,11 +34,11 @@ class BodyMocap(object):
             self.use_smplx = True
         else:
             smplModelPath = smpl_dir + '/basicModel_neutral_lbs_10_207_0_v1.0.0.pkl'
-            self.smpl = SMPL(smplModelPath, batch_size=1, create_transl=False).to(self.device)
+            self.smpl = SMPL(smplModelPath, batch_size=1, create_transl=False, extra_data_dir=extra_data_dir).to(self.device)
             self.use_smplx = False
             
-        #Load pre-trained neural network 
-        SMPL_MEAN_PARAMS = './extra_data/body_module/data_from_spin/smpl_mean_params.npz'
+        #Load pre-trained neural network
+        SMPL_MEAN_PARAMS = os.path.join(extra_data_dir, 'body_module/data_from_spin/smpl_mean_params.npz')
         self.model_regressor = hmr(SMPL_MEAN_PARAMS).to(self.device)
         checkpoint = torch.load(regressor_checkpoint)
         self.model_regressor.load_state_dict(checkpoint['model'], strict=False)
