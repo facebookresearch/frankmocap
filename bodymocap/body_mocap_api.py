@@ -65,10 +65,6 @@ class BodyMocap(object):
             img, norm_img, boxScale_o2n, bboxTopLeft, bbox = process_image_bbox(
                 img_original, body_bbox, input_res=constants.IMG_RES)
 
-            # print("bbox", bbox)
-            # print("fucking here bboxTopLeft", bboxTopLeft)
-            # sys.exit(0)
-
             # bboxTopLeft = bbox['bboxXYWH'][:2]
             '''
             print("bboxTopLeft", bboxTopLeft)
