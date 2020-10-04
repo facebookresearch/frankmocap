@@ -22,6 +22,9 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
 <p>
     <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/frankmocap_wholebody.gif" height="200">
 </p>
+<p>
+    <img src="https://penincillin.github.io/frank_mocap/video_02.gif" height="200">
+</p>
 
 
 ## Installation
@@ -91,7 +94,7 @@ See the [LICENSE](LICENSE) file.
 ```
 
 - FrankMocap leverages many amazing open-sources shared in research community.
-    - [SMPL](https://smpl.is.tue.mpg.de/), [SMPLX](smpl-x.is.tue.mpg.de) 
+    - [SMPL](https://smpl.is.tue.mpg.de/), [SMPLX](https://smpl-x.is.tue.mpg.de/) 
     - [Detectron2](https://github.com/facebookresearch/detectron2)       
     - [Pytorch3D](https://pytorch3d.org/) (for rendering)
     - [OpenDR](https://github.com/mattloper/opendr/wiki) (for rendering)

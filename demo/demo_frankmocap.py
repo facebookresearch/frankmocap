@@ -65,7 +65,7 @@ def run_regress(
         # only keep on bbox if args.single_person is set
         body_bbox_list, hand_bbox_list = __filter_bbox_list(
             body_bbox_list, hand_bbox_list, args.single_person)
-      
+
         # hand & body pose regression
         _, pred_hand_list = hand_mocap.regress(
             img_original_bgr, hand_bbox_list, add_margin=True)

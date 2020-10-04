@@ -139,7 +139,7 @@ class HandMocap:
 
         for hand_bboxes in hand_bbox_list:
 
-            if hand_bboxes is None:     #Should keep the same size with bbox size
+            if hand_bboxes is None:     # Should keep the same size with bbox size
                 pred_output_list.append(None)
                 hand_bbox_list_processed.append(None)
                 continue
