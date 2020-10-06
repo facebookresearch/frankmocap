@@ -55,7 +55,7 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
   python -m demo.demo_frankmocap --input_path ./sample_data/han_short.mp4 --out_dir ./mocap_output
 
   # screenless mode  (e.g., a remote server)
-  python -m demo.demo_frankmocap --input_path ./sample_data/han_short.mp4 --out_dir ./mocap_output
+  xvfb-run -a python -m demo.demo_frankmocap --input_path ./sample_data/han_short.mp4 --out_dir ./mocap_output
   ```
 - Note: 
   - Above commands use openGL by default. If it does not work, you may try alternative renderers (pytorch3d or openDR). 

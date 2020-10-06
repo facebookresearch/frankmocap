@@ -1,6 +1,6 @@
 # Hand Motion Capture Demo
 
-Our hande module provides 3D hand motion capture output. We use the (HMR)[https://akanazawa.github.io/hmr/] model, trained with several public hand pose datasets, the SOTA peformance among single-image based methods. See our [FrankMocap paper](https://penincillin.github.io/frank_mocap) for details.
+Our hande module provides 3D hand motion capture output. We use the [HMR](https://akanazawa.github.io/hmr/) model, trained with several public hand pose datasets, the SOTA peformance among single-image based methods. See our [FrankMocap paper](https://penincillin.github.io/frank_mocap) for details.
 
 <p>
     <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/frankmocap_hand.gif" height="256">
