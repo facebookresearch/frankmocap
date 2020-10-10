@@ -27,30 +27,6 @@ class OpendrRenderer(object):
         self.flength = 500.
 
     
-    def render_old(self, cam, verts, faces, bg_img, bbox_scale, bbox_top_left):
-        inputSize = self.img_size
-        bbox_size = 224 / bbox_scale
-        scale = cam[0] * (bbox_size / inputSize)
-        x0, y0 = bbox_top_left
-        cam[1] += (2*x0 + bbox_size - inputSize) / (inputSize * scale)
-        cam[2] += (2*y0 + bbox_size - inputSize) / (inputSize * scale)
-        cam[0] = scale
-
-        f = 5
-        tz = f / cam[0]
-        cam_t = np.array([cam[1], cam[2], tz])
-        verts = verts+cam_t
-
-        inputSize = bg_img.shape[0]
-        cam_for_render = 0.5 * inputSize * np.array([f, 1, 1])
-
-        rend_img = self.__call__(
-            img=bg_img, cam=cam_for_render, 
-            verts=verts, faces=faces, color=self.color)
-        
-        return rend_img
-    
-
     def render(self, verts, faces, bg_img):
         verts = verts.copy()
         faces = faces.copy()

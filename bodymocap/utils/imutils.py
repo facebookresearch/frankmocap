@@ -141,7 +141,6 @@ def crop_bboxInfo(img, center, scale, res =(224,224)):
     new_img[new_y[0]:new_y[1], new_x[0]:new_x[1]] = img[old_y[0]:old_y[1],
                                                         old_x[0]:old_x[1]]
 
-    # bboxTopLeft_inOriginal = (old_x[0], old_y[0] )
     bboxTopLeft_inOriginal = (ul[0], ul[1] )
 
     if new_img.shape[0] <20 or new_img.shape[1]<20:
@@ -154,139 +153,7 @@ def crop_bboxInfo(img, center, scale, res =(224,224)):
 
     # viewer2D.ImShow(new_img.astype(np.uint8),name='original')
 
-
     return new_img, bboxScale_o2n, np.array(bboxTopLeft_inOriginal)
-
-
-
-def crop_bboxInfo_frombboxXYXY(img, bboxXYXY, res=224):
-
-    """Crop image according to the supplied bounding box."""
-    if bbox_file is None and openpose_file is None:
-        # Assume that the person is centerered in the image
-        height = img.shape[0]
-        width = img.shape[1]
-        center = np.array([width // 2, height // 2])
-        scale = max(height, width) / 200
-    else:
-        if bbox_file is not None:
-            center, scale = bbox_from_json(bbox_file)
-        elif openpose_file is not None:
-            center, scale = bbox_from_openpose(openpose_file)
-
-            if center is None:
-                return None, None, None
-
-
-
-    # Upper left point
-    ul = np.array(transform([1, 1], center, scale, res, invert=1))-1
-    # Bottom right point
-    br = np.array(transform([res[0]+1,
-                             res[1]+1], center, scale, res, invert=1))-1
-
-
-    # Padding so that when rotated proper amount of context is included
-    pad = int(np.linalg.norm(br - ul) / 2 - float(br[1] - ul[1]) / 2)
-
-    new_shape = [br[1] - ul[1], br[0] - ul[0]]
-    if len(img.shape) > 2:
-        new_shape += [img.shape[2]]
-    # new_img = np.zeros(new_shape)
-    if new_shape[0] <1  or new_shape[1] <1:
-        return None, None, None
-    new_img = np.zeros(new_shape, dtype=np.uint8)
-
-    if new_img.shape[0] ==0:
-        return None, None, None
-
-    #Compute bbox for Han's format
-    bboxScale_o2n = res[0]/new_img.shape[0]             #224/ 531
-
-    # Range to fill new array
-    new_x = max(0, -ul[0]), min(br[0], len(img[0])) - ul[0]
-    new_y = max(0, -ul[1]), min(br[1], len(img)) - ul[1]
-    # Range to sample from original image
-    old_x = max(0, ul[0]), min(len(img[0]), br[0])
-    old_y = max(0, ul[1]), min(len(img), br[1])
-    new_img[new_y[0]:new_y[1], new_x[0]:new_x[1]] = img[old_y[0]:old_y[1],
-                                                        old_x[0]:old_x[1]]
-
-    # bboxTopLeft_inOriginal = (old_x[0], old_y[0] )
-    bboxTopLeft_inOriginal = (ul[0], ul[1] )
-
-
-    if new_img.shape[0] <20 or new_img.shape[1]<20:
-        return None, None, None
-    # print(bboxTopLeft_inOriginal)
-    # from renderer import viewer2D
-    # viewer2D.ImShow(new_img.astype(np.uint8),name='cropped')
-
-    new_img = cv2.resize(new_img, res)
-
-
-    return new_img, np.array(bboxScale_o2n), np.array(bboxTopLeft_inOriginal)
-
-
-
-
-def conv_bboxinfo_center2topleft(scale, center):
-    """
-    from (scale, center) -> (o2n, topleft)
-    """
-
-    hmr_res = (224,224)
-    
-    """Crop image according to the supplied bounding box."""
-    # Upper left point
-    ul = np.array(transform([1, 1], center, scale, hmr_res, invert=1))-1
-    # Bottom right point
-    br = np.array(transform([hmr_res[0]+1,
-                             hmr_res[1]+1], center, scale, hmr_res, invert=1))-1
-
-    new_shape = [br[1] - ul[1], br[0] - ul[0]]
-
-    #Compute bbox for Han's format
-    bboxScale_o2n = hmr_res[0]/new_shape[0]             #224/ 531
-    # bboxTopLeft_inOriginal = (old_x[0], old_y[0] )
-    bboxTopLeft_inOriginal = (ul[0], ul[1] )
-
-    return np.array(bboxScale_o2n), np.array(bboxTopLeft_inOriginal)
-
-
-
-def conv_bboxinfo_bboxXYXY(scale, center):
-    """
-    from (scale, center) -> (topleft, bottom right)
-    """
-
-    hmr_res = (224,224)
-    
-    """Crop image according to the supplied bounding box."""
-    # Upper left point
-    ul = np.array(transform([1, 1], center, scale, hmr_res, invert=1))-1
-    # Bottom right point
-    br = np.array(transform([hmr_res[0]+1,
-                             hmr_res[1]+1], center, scale, hmr_res, invert=1))-1
-
-    return np.concatenate( (ul, br))
-
-
-
-def conv_bboxinfo_bboxXYXY_to_centerscale(bbox_xyxy):
-    """
-    from (scale, center) -> (o2n, topleft)
-    """
-
-    bbr = [bbox_xyxy[0],bbox_xyxy[1], bbox_xyxy[2]-bbox_xyxy[0]  , bbox_xyxy[3]-bbox_xyxy[2]]
-    center = bbr[:2] + 0.5 * bbr[2:]
-    bbox_size = max(bbr[2:])
-    hand_boxScale_o2n = 224.0/bbox_size         #original to 224
-    return hand_boxScale_o2n
-    
-    # return center, 
-
-
 
 
 def uncrop(img, center, scale, orig_shape, rot=0, is_rgb=True):
@@ -602,7 +469,6 @@ def process_image_bbox(img_original, bbox_XYWH, input_res=224):
     img, boxScale_o2n, bboxTopLeft = crop_bboxInfo(img, center, scale, (input_res, input_res))
 
     # viewer2D.ImShow(img, name='cropped', waitTime=1)        #224,224,3
-
 
     if img is None:
         return None, None,  None, None, None
