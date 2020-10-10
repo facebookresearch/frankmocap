@@ -138,8 +138,11 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
                 args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
         print(f"Processed : {image_path}")
-        continue
         
+
+    #save images as a video
+    if not args.no_display and not args.no_video_out:
+        demo_utils.gen_video_out(args.out_dir)
 
     # When everything done, release the capture
     if input_type =='webcam' and input_data is not None:

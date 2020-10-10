@@ -126,6 +126,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
         if args.out_dir is not None:
             demo_utils.save_res_img(args.out_dir, image_path, res_img)
 
+
         # save predictions to pkl
         if args.save_pred_pkl:
             demo_type = 'body'
@@ -133,6 +134,10 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
                 args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
         print(f"Processed : {image_path}")
+
+    #save images as a video
+    if not args.no_display and not args.no_video_out:
+        demo_utils.gen_video_out(args.out_dir)
 
     if input_type =='webcam' and input_data is not None:
         input_data.release()

@@ -31,12 +31,6 @@ def setup_render_out(out_dir):
         return None
 
 
-def gen_video_out(out_dir):
-    print(">> Generating video in {}/{}.mp4".format(out_dir,osp.basename(out_dir) ))
-    inputFrameDir = osp.join(out_dir, 'merged')
-    outVideo_fileName = osp.join(out_dir, osp.basename(out_dir)+'.mp4')
-    ffmpeg_cmd = 'ffmpeg -y -f image2 -framerate 25 -pattern_type glob -i "{0}/*.jpg"  -pix_fmt yuv420p -c:v libx264 -x264opts keyint=25:min-keyint=25:scenecut=-1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" {1}'.format(inputFrameDir, outVideo_fileName)
-    os.system(ffmpeg_cmd)
 
 
 def __get_input_type(args):
@@ -290,3 +284,10 @@ def save_res_img(out_dir, image_path, res_img):
     cv2.imwrite(res_img_path, res_img)
     print(f"Visualization saved: {res_img_path}")
 
+
+def gen_video_out(out_dir):
+    print(">> Generating video in {}/{}.mp4".format(out_dir,osp.basename(out_dir) ))
+    inputFrameDir = out_dir#osp.join(out_dir, 'merged')
+    outVideo_fileName = osp.join(out_dir+'/..', osp.basename(out_dir)+'.mp4')
+    ffmpeg_cmd = 'ffmpeg -y -f image2 -framerate 25 -pattern_type glob -i "{0}/*.jpg"  -pix_fmt yuv420p -c:v libx264 -x264opts keyint=25:min-keyint=25:scenecut=-1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" {1}'.format(inputFrameDir, outVideo_fileName)
+    os.system(ffmpeg_cmd)

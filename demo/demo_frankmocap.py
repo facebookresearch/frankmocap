@@ -210,6 +210,10 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
 
         print(f"Processed : {image_path}")
 
+    #save images as a video
+    if not args.no_display and not args.no_video_out:
+        demo_utils.gen_video_out(args.out_dir)
+
     if input_type =='webcam' and input_data is not None:
         input_data.release()
     cv2.destroyAllWindows()
