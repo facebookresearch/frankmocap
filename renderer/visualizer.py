@@ -137,12 +137,12 @@ class Visualizer(object):
         else:
             self._visualize_screenless_naive(pred_mesh_list_offset, img_original=res_img)
             overlaidImg = self.renderout['render_camview']
-            sideImg = self.renderout['render_sideview']
+            # sideImg = self.renderout['render_sideview']
 
         return overlaidImg
 
 
-    def _visualize_screenless_naive(self, meshList, skelList=None, body_bbox_list=None, img_original=None, vis=False, maxHeight = 1080):
+    def _visualize_screenless_naive(self, meshList, skelList=None, body_bbox_list=None, img_original=None, show_side = False, vis=False, maxHeight = 1080):
         
         """
             args:
@@ -215,20 +215,23 @@ class Visualizer(object):
             viewer2D.ImShow(renderImg,waitTime=1,name="rendered")
 
         ###Render Side View
-        self.renderer.setCameraViewMode("free")     
-        self.renderer.setViewAngle(90,20)
-        self.renderer.showBackground(False)
-        self.renderer.setViewportSize(img_original_resized.shape[1], img_original_resized.shape[0])
-        self.renderer.display()
-        sideImg = self.renderer.get_screen_color_ibgr()        #Overwite on rawImg
+        if show_side:
+            self.renderer.setCameraViewMode("free")     
+            self.renderer.setViewAngle(90,20)
+            self.renderer.showBackground(False)
+            self.renderer.setViewportSize(img_original_resized.shape[1], img_original_resized.shape[0])
+            self.renderer.display()
+            sideImg = self.renderer.get_screen_color_ibgr()        #Overwite on rawImg
 
-        if vis:
-            viewer2D.ImShow(sideImg,waitTime=0,name="sideview")
+            if vis:
+                viewer2D.ImShow(sideImg,waitTime=0,name="sideview")
         
         # sideImg = cv2.resize(sideImg, (renderImg.shape[1], renderImg.shape[0]) )
         self.renderout  ={}
         self.renderout['render_camview'] = renderImg
-        self.renderout['render_sideview'] = sideImg
+
+        if show_side:
+            self.renderout['render_sideview'] = sideImg
 
 
     def _visualize_gui_naive(self, meshList, skelList=None, body_bbox_list=None, img_original=None, normal_compute=True):
