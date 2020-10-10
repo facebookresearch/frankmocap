@@ -28,7 +28,7 @@ def ComputeNormal(vertices, trifaces):
 
     faceNormals = np.reshape(faceNormals, originalShape)
 
-    if True:        #Slow version
+    if False:        #Slow version
         vertex_normals = np.zeros(vertices.shape) #(frames x 11510) x 3
         for fIdx, vIdx in enumerate(trifaces[:,0]):
             vertex_normals[:,vIdx,:] += faceNormals[:,fIdx,:]
@@ -43,6 +43,7 @@ def ComputeNormal(vertices, trifaces):
         vertex_normals = np.add.reduceat(faceNormals[:,index_sorted[:, 1],:][0],
             np.concatenate(([0], np.cumsum(np.unique(index_sorted[:, 0],
             return_counts=True)[1])[:-1])))[None, :]
+        vertex_normals = vertex_normals.astype(np.float64)
 
     originalShape = vertex_normals.shape
     vertex_normals = np.reshape(vertex_normals, [-1,3])

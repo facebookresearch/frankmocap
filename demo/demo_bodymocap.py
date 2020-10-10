@@ -26,7 +26,9 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
 
     cur_frame = args.start_frame
     video_frame = 0
+    timer = Timer()
     while True:
+        timer.tic()
         # load data
         load_bbox = False
 
@@ -133,6 +135,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             demo_utils.save_pred_to_pkl(
                 args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
+        timer.toc(bPrint=True,title="Time")
         print(f"Processed : {image_path}")
 
     #save images as a video
