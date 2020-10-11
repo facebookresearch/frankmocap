@@ -61,15 +61,24 @@ def __get_input_type(args):
 def __video_setup(args):
     video_path = args.input_path
     video_dir, video_name, video_basename, ext = gnu.analyze_path(video_path)
-    args.frame_dir = osp.join(args.out_dir, "frames", video_basename)
-    args.out_dir = osp.join(args.out_dir, "output", video_basename)
-    gnu.build_dir(args.frame_dir)
-    gnu.build_dir(args.out_dir)
+    # args.frame_dir = osp.join(args.out_dir, "frames", video_basename)
+    # args.out_dir = osp.join(args.out_dir, "rendered", video_basename)
+
+    #make a frame_dir to save extracted frames
+    args.frame_dir = osp.join(args.out_dir, "frames")
+    args.seq_name = video_basename
+    # gnu.build_dir(args.frame_dir)     #No need to save
+
+    render_out_dir = osp.join(args.out_dir, "rendered")
+    gnu.build_dir(render_out_dir)
 
 def __img_seq_setup(args):
     # seq_basename = os.path.basename(args.out_dir)
-    args.out_dir = osp.join(args.out_dir, "output")
-    gnu.build_dir(args.out_dir)
+    seq_dir_path = args.input_path
+    args.seq_name = os.path.basename(args.input_path)
+
+    render_out_dir = osp.join(args.out_dir, "rendered")
+    gnu.build_dir(render_out_dir)
 
 
 def setup_input(args):
@@ -281,7 +290,7 @@ def save_pred_to_pkl(
     img_name = osp.basename(image_path)
     record = img_name.split('.')
     pkl_name = f"{'.'.join(record[:-1])}_prediction_result.pkl"
-    pkl_path = osp.join(args.out_dir, pkl_name)
+    pkl_path = osp.join(args.out_dir,'mocap',pkl_name)
     gnu.make_subdir(pkl_path)
     gnu.save_pkl(pkl_path, saved_data)
     print(f"Prediction saved: {pkl_path}")
@@ -290,15 +299,15 @@ def save_pred_to_pkl(
 def save_res_img(out_dir, image_path, res_img):
     img_name = osp.basename(image_path)
     img_name = img_name[:-4] + '.jpg'           #Always save as jpg
-    res_img_path = osp.join(out_dir, img_name)
+    res_img_path = osp.join(out_dir,'rendered', img_name)
     gnu.make_subdir(res_img_path)
     cv2.imwrite(res_img_path, res_img)
     print(f"Visualization saved: {res_img_path}")
 
 
-def gen_video_out(out_dir):
+def gen_video_out(out_dir, seq_name):
     print(">> Generating video in {}/{}.mp4".format(out_dir,osp.basename(out_dir) ))
-    inputFrameDir = out_dir#osp.join(out_dir, 'merged')
-    outVideo_fileName = osp.join(out_dir+'/..', osp.basename(out_dir)+'.mp4')
+    inputFrameDir = osp.join(out_dir, 'rendered')
+    outVideo_fileName = osp.join(out_dir, seq_name+'.mp4')
     ffmpeg_cmd = 'ffmpeg -y -f image2 -framerate 25 -pattern_type glob -i "{0}/*.jpg"  -pix_fmt yuv420p -c:v libx264 -x264opts keyint=25:min-keyint=25:scenecut=-1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" {1}'.format(inputFrameDir, outVideo_fileName)
     os.system(ffmpeg_cmd)

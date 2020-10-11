@@ -59,7 +59,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             # save the obtained video frames
             image_path = osp.join(args.frame_dir, f"{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                cv2.imwrite(image_path, img_original_bgr)
+                # cv2.imwrite(image_path, img_original_bgr)     #Disabled. No need to save
                 video_frame += 1
 
         elif input_type == 'webcam':    
@@ -128,7 +128,6 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
         if args.out_dir is not None:
             demo_utils.save_res_img(args.out_dir, image_path, res_img)
 
-
         # save predictions to pkl
         if args.save_pred_pkl:
             demo_type = 'body'
@@ -140,7 +139,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
 
     #save images as a video
     if not args.no_display and not args.no_video_out:
-        demo_utils.gen_video_out(args.out_dir)
+        demo_utils.gen_video_out(args.out_dir, args.seq_name)
 
     if input_type =='webcam' and input_data is not None:
         input_data.release()

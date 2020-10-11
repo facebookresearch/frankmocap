@@ -3,7 +3,7 @@
 FrankMocap pursues an easy-to-use single view 3D motion capture system developed by Facebook AI Research (FAIR). FrankMocap provides state-of-the-art 3D pose estimation outputs for body, hand, and body+hands in a single system. The core objective of FrankMocap is to democratize the 3D human pose estimation technology, enabling anyone (researchers, engineers, developers, artists, and others) can easily obtain 3D motion capture outputs from videos and images.
 
 ### News:
-  - [2020/10/09] Improved openGL rendering speed, and now it should be faster (for body module, 6fps -> 10fps)
+  - [2020/10/09] We have improved openGL rendering speed. It's about 40% faster. (e.g., body module became 6fps -> 11fps)
 
 ## Key Features
 - Body Motion Capture:
