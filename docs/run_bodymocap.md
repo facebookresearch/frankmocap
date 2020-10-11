@@ -77,8 +77,9 @@ For our body mocap module, we use [HMR](https://akanazawa.github.io/hmr/) networ
     ```
 - Bbox format (json)
     ```
-    {"image_path": "xxx.jpg", "hand_bbox_list":[{"left_hand":[x,y,w,h], "right_hand":[x,y,w,h]}], "body_bbox_list":[[x,y,w,h]]}
+    {"image_path": "xxx.jpg", "hand_bbox_list":[{"left_hand":[x,y,x,y], "right_hand":[x,y,x,y]}], "body_bbox_list":[[x,y,x,y]]}
     ```
+    - Note that bbox format is [minX,minY,maxX,maxY]
 - For example
     ```
     {"image_path": "./sample_data/images/cj_dance_01_03_1_00075.png", "body_bbox_list": [[149, 380, 242, 565]], "hand_bbox_list": [{"left_hand": [288.9151611328125, 376.70184326171875, 39.796295166015625, 51.72357177734375], "right_hand": [234.97779846191406, 363.4115295410156, 50.28489685058594, 57.89691162109375]}]}
