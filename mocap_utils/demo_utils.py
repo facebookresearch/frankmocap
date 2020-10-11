@@ -66,6 +66,11 @@ def __video_setup(args):
     gnu.build_dir(args.frame_dir)
     gnu.build_dir(args.out_dir)
 
+def __img_seq_setup(args):
+    # seq_basename = os.path.basename(args.out_dir)
+    args.out_dir = osp.join(args.out_dir, "output")
+    gnu.build_dir(args.out_dir)
+
 
 def setup_input(args):
     """
@@ -75,6 +80,9 @@ def setup_input(args):
         a folder with image files
         a folder with bbox (json) files
         "webcam"
+    
+    Set output folder as 
+        args.output_dir/output/
     """
     image_exts = ('jpg', 'png', 'jpeg', 'bmp')
     video_exts = ('mp4', 'avi', 'mov')
@@ -95,9 +103,11 @@ def setup_input(args):
     elif input_type =='image_dir':
         image_list = gnu.get_all_files(args.input_path, image_exts, "relative") 
         image_list = [ osp.join(args.input_path, image_name) for image_name in image_list ]
+        __img_seq_setup(args)
         return input_type, image_list
 
     elif input_type =='bbox_dir':
+        __img_seq_setup(args)
         json_files = gnu.get_all_files(args.input_path, '.json', "relative") 
         input_data = list()
         for json_file in json_files:
@@ -279,6 +289,7 @@ def save_pred_to_pkl(
 
 def save_res_img(out_dir, image_path, res_img):
     img_name = osp.basename(image_path)
+    img_name = img_name[:-4] + '.jpg'           #Always save as jpg
     res_img_path = osp.join(out_dir, img_name)
     gnu.make_subdir(res_img_path)
     cv2.imwrite(res_img_path, res_img)
