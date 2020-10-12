@@ -17,12 +17,9 @@ import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel
 import pdb
 import cv2
-from .base_model import BaseModel
 from . import resnet
 from handmocap.hand_modules.h3dw_networks import H3DWEncoder
 import time
-# from util import vis_util
-# from handmocap.hand_modules.smplx_hand import body_models as smplx
 import mocap_utils.general_utils as gnu
 import smplx
 import pdb
@@ -91,33 +88,17 @@ def extract_hand_output(output, hand_type, hand_info, top_finger_joints_type='av
     return output
 
 
-class H3DWModel(BaseModel):
+class H3DWModel(object):
     @property
     def name(self):
         return 'H3DWModel'
 
     def __init__(self, opt):
-
-        BaseModel.initialize(self, opt)
+        self.opt = opt
+        self.Tensor = torch.cuda.FloatTensor
 
         # set params
         self.inputSize = opt.inputSize
-
-        self.single_branch = opt.single_branch
-        self.two_branch = opt.two_branch
-        self.aux_as_main = opt.aux_as_main
-        assert (not self.single_branch and self.two_branch) or (
-            self.single_branch and not self.two_branch)
-        if self.aux_as_main:
-            assert self.single_branch
-
-        if opt.isTrain and opt.process_rank <= 0:
-            if self.two_branch:
-                print("!!!!!!!!!!!! Attention, use two branch framework")
-                time.sleep(10)
-            else:
-                print("!!!!!!!!!!!! Attention, use one branch framework")
-
         self.total_params_dim = opt.total_params_dim
         self.cam_params_dim = opt.cam_params_dim
         self.pose_params_dim = opt.pose_params_dim
@@ -171,32 +152,19 @@ class H3DWModel(BaseModel):
         if opt.dist:
             self.encoder = DistributedDataParallel(
                 self.encoder, device_ids=[torch.cuda.current_device()])
-        if self.isTrain:
-            self.optimizer_E = torch.optim.Adam(
-                self.encoder.parameters(), lr=opt.lr_e)
         
-        # load pretrained / trained weights for encoder
-        if self.isTrain:
-            assert False, "Not implemented Yet"
-            pass
+        checkpoint_path = opt.checkpoint_path
+        if not osp.exists(checkpoint_path): 
+            print(f"Error: {checkpoint_path} does not exists")
+            self.success_load = False
         else:
-            # load trained model for testing
-            which_epoch = opt.which_epoch
-            if which_epoch == 'latest' or int(which_epoch)>0:
-                self.success_load = self.load_network(self.encoder, 'encoder', which_epoch)
+            if self.opt.dist:
+                self.encoder.module.load_state_dict(torch.load(
+                    checkpoint_path, map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device())))
             else:
-                checkpoint_path = opt.checkpoint_path
-                if not osp.exists(checkpoint_path): 
-                    print(f"Error: {checkpoint_path} does not exists")
-                    self.success_load = False
-                else:
-                    if self.opt.dist:
-                        self.encoder.module.load_state_dict(torch.load(
-                            checkpoint_path, map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device())))
-                    else:
-                        saved_weights = torch.load(checkpoint_path)
-                        self.encoder.load_state_dict(saved_weights)
-                    self.success_load = True
+                saved_weights = torch.load(checkpoint_path)
+                self.encoder.load_state_dict(saved_weights)
+            self.success_load = True
 
 
     def load_params(self):
@@ -247,8 +215,6 @@ class H3DWModel(BaseModel):
         body_pose = torch.zeros((self.batch_size, 63)).float().cuda() 
         body_pose[:, 60:] = hand_rotation # set right hand rotation
 
-        # zero_hand_rot = torch.zeros(hand_rotation.size()).float().cuda().detach()
-        # zero_hand_pose = torch.zeros(hand_pose.size()).float().cuda().detach()
         output = self.smplx(
             global_orient = self.global_orient,
             body_pose = body_pose,
@@ -256,10 +222,6 @@ class H3DWModel(BaseModel):
             betas = shape_params,
             return_verts = True)
         
-        # print("body_pose", body_pose)
-        # print("vertices", torch.mean(output.vertices))
-        # sys.exit(0)
-
         hand_output = extract_hand_output(
             output, 
             hand_type = 'right', 
@@ -307,8 +269,6 @@ class H3DWModel(BaseModel):
         self.pred_joints_2d = self.batch_orth_proj_idrot(
             self.pred_joints_3d, self.pred_cam_params)
         
-        # self.gt_verts, self.gt_joints_3d_mano = self.get_smplx_output(self.gt_pose_params)
-
 
     def test(self):
         with torch.no_grad():
@@ -325,59 +285,6 @@ class H3DWModel(BaseModel):
         )
         return pred_result
 
-
-    def get_current_visuals(self, idx=0):
-        assert self.opt.isTrain, "This function should not be called in test"
-
-        # visualize image first
-        img = self.input_img[idx].cpu().detach().numpy()
-        show_img = vis_util.recover_img(img)[:,:,::-1]
-        visual_dict = OrderedDict([('img', show_img)])
-
-        # visualize keypoint
-        kp = self.keypoints[idx].cpu().detach().numpy()
-        pred_kp = self.pred_joints_2d[idx].cpu().detach().numpy()
-        kp_weight = self.keypoints_weights[idx].cpu().detach().numpy()
-
-        kp_img = vis_util.draw_keypoints(
-            img, kp, kp_weight, 'red', self.inputSize)
-        pred_kp_img = vis_util.draw_keypoints(
-            img, pred_kp, kp_weight, 'green', self.inputSize)
-
-        # visualize gt and pred mesh
-        cam = self.pred_cam_params[idx].cpu().detach().numpy()
-        gt_vert = self.gt_verts[idx].cpu().detach().numpy()
-        gt_render_img = vis_util.render_mesh_to_image(
-            self.opt.inputSize, img, cam, gt_vert, self.right_hand_faces_holistic)
-        gt_render_img = gt_render_img[:, :, ::-1]
-
-        vert = self.pred_verts[idx].cpu().detach().numpy()
-        render_img = vis_util.render_mesh_to_image(
-            self.opt.inputSize, img, cam, vert, self.right_hand_faces_holistic)
-        render_img = render_img[:, :, ::-1]
-
-        visual_dict['gt_render_img'] = gt_render_img
-        visual_dict['render_img'] = render_img
-        visual_dict['gt_keypoint'] = kp_img
-        visual_dict['pred_keypoint'] = pred_kp_img
-
-        for batch_id, vis_verts_batch in enumerate(self.vis_verts_list):
-            bg_img = np.ones((3, 224, 224), dtype=np.float32)
-            cam = self.mean_params[:, :3][idx].cpu().detach().numpy()
-            vert = vis_verts_batch[idx].cpu().detach().numpy()
-            render_img = vis_util.render_mesh_to_image(
-                self.opt.inputSize, bg_img, cam, vert, self.right_hand_faces_holistic)
-            visual_dict[f"rende_img_{batch_id}"] = render_img[:,:,::-1]
-
-        return visual_dict
-
-
-    def get_current_visuals_batch(self):
-        all_visuals = list()
-        for idx in range(self.batch_size):
-            all_visuals.append(self.get_current_visuals(idx))
-        return all_visuals
-    
 
     def eval(self):
         self.encoder.eval()

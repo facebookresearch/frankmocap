@@ -16,6 +16,7 @@ from demo.demo_options import DemoOptions
 from bodymocap.body_mocap_api import BodyMocap
 from bodymocap.body_bbox_detector import BodyPoseEstimator
 import mocap_utils.demo_utils as demo_utils
+import mocap_utils.general_utils as gnu
 from mocap_utils.timer import Timer
 
 from renderer.viewer2D import ImShow
@@ -55,12 +56,13 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
-            video_path = args.input_path
             # save the obtained video frames
-            image_path = osp.join(args.frame_dir, f"{cur_frame:05d}.jpg")
+            image_path = osp.join(args.out_dir, "frames", f"{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                # cv2.imwrite(image_path, img_original_bgr)     #Disabled. No need to save
                 video_frame += 1
+                if args.save_frame:
+                    gnu.make_subdir(image_path)
+                    cv2.imwrite(image_path, img_original_bgr)
 
         elif input_type == 'webcam':    
             _, img_original_bgr = input_data.read()
@@ -68,13 +70,13 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
-            video_path = args.input_path
             # save the obtained video frames
-            image_path = f"scene_{cur_frame:05d}.jpg"
+            image_path = osp.join(args.out_dir, "frames", f"scene_{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                # cv2.imwrite(image_path, img_original_bgr)
                 video_frame += 1
-            # assert input_type == 'webcam'
+                if args.save_frame:
+                    gnu.make_subdir(image_path)
+                    cv2.imwrite(image_path, img_original_bgr)
         else:
             assert False, "Unknown input_type"
 
@@ -138,7 +140,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
         print(f"Processed : {image_path}")
 
     #save images as a video
-    if not args.no_display and not args.no_video_out:
+    if not args.no_video_out and input_type in ['video', 'webcam']:
         demo_utils.gen_video_out(args.out_dir, args.seq_name)
 
     if input_type =='webcam' and input_data is not None:

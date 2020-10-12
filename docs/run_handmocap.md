@@ -89,7 +89,7 @@ Our hande module provides 3D hand motion capture output. We use the [HMR](https:
     ```
 - Bbox format (json)
     ```
-    {"image_path": "xxx.jpg", "hand_bbox_list":[{"left_hand":[x,y,x,y], "right_hand":[x,y,x,y]}], "body_bbox_list":[[x,y,x,y]]}
+    {"image_path": "xxx.jpg", "hand_bbox_list":[{"left_hand":[x,y,w,h], "right_hand":[x,y,w,h]}], "body_bbox_list":[[x,y,w,h]]}
     ```
     - Note that bbox format is [minX,minY,maxX,maxY]
 - For example

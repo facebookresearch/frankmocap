@@ -16,6 +16,7 @@ from demo.demo_options import DemoOptions
 from bodymocap.body_mocap_api import BodyMocap
 from handmocap.hand_mocap_api import HandMocap
 import mocap_utils.demo_utils as demo_utils
+import mocap_utils.general_utils as gnu
 from mocap_utils.timer import Timer
 from datetime import datetime
 
@@ -67,7 +68,7 @@ def run_regress(
             body_bbox_list, hand_bbox_list, args.single_person)
 
         # hand & body pose regression
-        _, pred_hand_list = hand_mocap.regress(
+        pred_hand_list = hand_mocap.regress(
             img_original_bgr, hand_bbox_list, add_margin=True)
         pred_body_list = body_mocap.regress(img_original_bgr, body_bbox_list)
         assert len(hand_bbox_list) == len(pred_hand_list)
@@ -94,7 +95,7 @@ def run_regress(
         assert len(pred_body_list) == len(hand_bbox_list)
 
         # hand regression
-        _, pred_hand_list = hand_mocap.regress(
+        pred_hand_list = hand_mocap.regress(
             img_original_bgr, hand_bbox_list, add_margin=True)
         assert len(hand_bbox_list) == len(pred_hand_list) 
 
@@ -137,12 +138,13 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
-            video_path = args.input_path
-            # save the obtained video frames
-            image_path = osp.join(args.frame_dir, f"{cur_frame:05d}.jpg")
+          # save the obtained video frames
+            image_path = osp.join(args.out_dir, "frames", f"{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                cv2.imwrite(image_path, img_original_bgr)
                 video_frame += 1
+                if args.save_frame:
+                    gnu.make_subdir(image_path)
+                    cv2.imwrite(image_path, img_original_bgr)
         
         elif input_type == 'webcam':
             _, img_original_bgr = input_data.read()
@@ -150,16 +152,15 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
-            video_path = args.input_path
             # save the obtained video frames
-            image_path = f"scene_{cur_frame:05d}.jpg"
-            # image_path = osp.join(args.frame_dir, f"{cur_frame:05d}.jpg")
+            image_path = osp.join(args.out_dir, "frames", f"scene_{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                # cv2.imwrite(image_path, img_original_bgr)
                 video_frame += 1
+                if args.save_frame:
+                    gnu.make_subdir(image_path)
+                    cv2.imwrite(image_path, img_original_bgr)
         else:
             assert False, "Unknown input_type"
-
 
         cur_frame +=1
         if img_original_bgr is None or cur_frame > args.end_frame:
@@ -210,8 +211,8 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
 
         print(f"Processed : {image_path}")
 
-    #save images as a video
-    if not args.no_display and not args.no_video_out:
+    # save images as a video
+    if not args.no_video_out and input_type in ['video', 'webcam']:
         demo_utils.gen_video_out(args.out_dir, args.seq_name)
 
     if input_type =='webcam' and input_data is not None:

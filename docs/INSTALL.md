@@ -10,6 +10,9 @@
   conda create -n venv_frankmocap python=3.7
   conda activate venv_frankmocap
 
+  # Install ffmpeg
+  sudo apt-get install ffmpeg
+
   # Install cuda 
   # Choose versions based on your system. For example:
   # conda install cudatoolkit=10.1 cudnn=7.6.0

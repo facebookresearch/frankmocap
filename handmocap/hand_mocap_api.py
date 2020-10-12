@@ -104,7 +104,7 @@ class HandMocap:
         assert hand_type in ['left_hand', 'right_hand']
         img_cropped, bbox_scale_ratio, bbox_processed = \
             self.__pad_and_resize(raw_image, hand_bbox, add_margin)
-
+        
         #horizontal Flip to make it as right hand
         if hand_type=='left_hand':
             img_cropped = np.ascontiguousarray(img_cropped[:, ::-1,:], img_cropped.dtype) 
@@ -215,4 +215,4 @@ class HandMocap:
             hand_bbox_list_processed.append(hand_bboxes_processed)
         
         assert len(hand_bbox_list_processed) == len(hand_bbox_list)
-        return hand_bbox_list_processed, pred_output_list
+        return pred_output_list

@@ -27,6 +27,8 @@ class DemoOptions():
         parser.add_argument('--save_bbox_output', action='store_true', help='Save the bboxes in json files (bbox_xywh format)')
         parser.add_argument('--save_pred_pkl', action='store_true', help='Save the predictions (bboxes, params, meshes in pkl format')
         parser.add_argument("--save_mesh", action='store_true', help="Save the predicted vertices and faces")
+        parser.add_argument("--save_frame", action='store_true', help='Save the extracted frames from video input or webcam')
+
 
         #Other options
         parser.add_argument('--single_person', action='store_true', help='Reconstruct only one person in the scene with the biggest bbox')

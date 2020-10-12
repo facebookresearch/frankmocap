@@ -1,9 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import torch
 import torch.nn as nn
 from torch.nn import init
@@ -56,11 +52,7 @@ class H3DWEncoder(nn.Module):
         self.opt = opt
 
         relu = nn.ReLU(inplace=False)
-        if self.two_branch:
-            fc2  = nn.Linear(2048, 1024)
-        else:
-            fc2  = nn.Linear(1024, 1024)
-
+        fc2  = nn.Linear(1024, 1024)
         regressor = nn.Linear(1024 + opt.total_params_dim, opt.total_params_dim)
 
         feat_encoder = [relu, fc2, relu]

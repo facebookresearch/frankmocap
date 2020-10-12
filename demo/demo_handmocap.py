@@ -17,16 +17,16 @@ from handmocap.hand_bbox_detector import HandBboxDetector
 
 from renderer.viewer2D import ImShow
 import time
-# import renderer.viewer2D as viewer2D
-# import renderer.opendr_renderer as od_render
 
 
 def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
     #Set up input data (images or webcam)
     input_type, input_data = demo_utils.setup_input(args)
  
+    assert args.out_dir is not None, "Please specify output dir to store the results"
     cur_frame = args.start_frame
     video_frame = 0
+
     while True:
         # load data
         load_bbox = False
@@ -54,12 +54,13 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
-            video_path = args.input_path
             # save the obtained video frames
-            image_path = osp.join(args.frame_dir, f"{cur_frame:05d}.jpg")
+            image_path = osp.join(args.out_dir, "frames", f"{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                cv2.imwrite(image_path, img_original_bgr)
                 video_frame += 1
+                if args.save_frame:
+                    gnu.make_subdir(image_path)
+                    cv2.imwrite(image_path, img_original_bgr)
         
         elif input_type == 'webcam':
             _, img_original_bgr = input_data.read()
@@ -67,13 +68,13 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
-            video_path = args.input_path
             # save the obtained video frames
-            image_path = f"scene_{cur_frame:05d}.jpg"
-            # image_path = osp.join(args.frame_dir, f"{cur_frame:05d}.jpg")
+            image_path = osp.join(args.out_dir, "frames", f"scene_{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
-                # cv2.imwrite(image_path, img_original_bgr)
                 video_frame += 1
+                if args.save_frame:
+                    gnu.make_subdir(image_path)
+                    cv2.imwrite(image_path, img_original_bgr)
         else:
             assert False, "Unknown input_type"
 
@@ -98,7 +99,7 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
             assert args.crop_type == 'no_crop'
             detect_output = bbox_detector.detect_hand_bbox(img_original_bgr.copy())
             body_pose_list, body_bbox_list, hand_bbox_list, raw_hand_bboxes = detect_output
-
+        
         # save the obtained body & hand bbox to json file
         if args.save_bbox_output:
             demo_utils.save_info_to_json(args, image_path, body_bbox_list, hand_bbox_list)
@@ -106,30 +107,30 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
         if len(hand_bbox_list) < 1:
             print(f"No hand deteced: {image_path}")
             continue
-        
+    
         # Hand Pose Regression
-        hand_bbox_list_processed, pred_output_list = hand_mocap.regress(
+        pred_output_list = hand_mocap.regress(
                 img_original_bgr, hand_bbox_list, add_margin=True)
         assert len(hand_bbox_list) == len(body_bbox_list)
         assert len(body_bbox_list) == len(pred_output_list)
 
         # extract mesh for rendering (vertices in image space and faces) from pred_output_list
         pred_mesh_list = demo_utils.extract_mesh_from_output(pred_output_list)
-        
+
         # visualize
         res_img = visualizer.visualize(
             img_original_bgr, 
             pred_mesh_list = pred_mesh_list, 
             hand_bbox_list = hand_bbox_list)
 
-        # save the image (we can make an option here)
-        if args.out_dir is not None:
-            demo_utils.save_res_img(args.out_dir, image_path, res_img)
-
         # show result in the screen
         if not args.no_display:
             res_img = res_img.astype(np.uint8)
             ImShow(res_img)
+
+        # save the image (we can make an option here)
+        if args.out_dir is not None:
+            demo_utils.save_res_img(args.out_dir, image_path, res_img)
 
         # save predictions to pkl
         if args.save_pred_pkl:
@@ -139,9 +140,8 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
 
         print(f"Processed : {image_path}")
         
-
     #save images as a video
-    if not args.no_display and not args.no_video_out:
+    if not args.no_video_out and input_type in ['video', 'webcam']:
         demo_utils.gen_video_out(args.out_dir, args.seq_name)
 
     # When everything done, release the capture

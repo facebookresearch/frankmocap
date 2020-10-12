@@ -102,13 +102,6 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         else:
             left_hand_pose = torch.from_numpy(np.zeros((1,45), dtype= np.float32)).cuda()
 
-        # smplx_output = smplx_model(
-        #     betas = pred_betas, 
-        #     body_pose = pred_rotmat[:,1:], 
-        #     global_orient = pred_rotmat[:,0].unsqueeze(1),
-        #     right_hand_pose = right_hand_pose, 
-        #     left_hand_pose= left_hand_pose,
-        #     pose2rot = False)
 
         #Convert rot_mat to aa since hands are always in aa
         pred_aa = rotmat3x3_to_angleaxis(pred_rotmat)
@@ -121,7 +114,6 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
             left_hand_pose= left_hand_pose,
             pose2rot = True)
 
-        
 
         pred_vertices = smplx_output.vertices
         pred_vertices = pred_vertices[0].detach().cpu().numpy()

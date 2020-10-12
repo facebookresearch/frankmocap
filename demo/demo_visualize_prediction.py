@@ -209,6 +209,7 @@ def visualize_prediction(args, demo_type, smpl_type, smpl_model, pkl_files, visu
             pred_mesh_list = pred_mesh_list,
             body_bbox_list = body_bbox_list,
             hand_bbox_list = hand_bbox_list)
+
         # save result image
         demo_utils.save_res_img(args.out_dir, image_path, res_img)
 

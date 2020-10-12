@@ -77,9 +77,9 @@ For our body mocap module, we use [HMR](https://akanazawa.github.io/hmr/) networ
     ```
 - Bbox format (json)
     ```
-    {"image_path": "xxx.jpg", "hand_bbox_list":[{"left_hand":[x,y,x,y], "right_hand":[x,y,x,y]}], "body_bbox_list":[[x,y,x,y]]}
+    {"image_path": "xxx.jpg", "hand_bbox_list":[{"left_hand":[x,y,w,h], "right_hand":[x,y,w,h]}], "body_bbox_list":[[x,y,w,h]]}
     ```
-    - Note that bbox format is [minX,minY,maxX,maxY]
+    - Note that bbox format is [min_x, min_y, max_x, max_y]
 - For example
     ```
     {"image_path": "./sample_data/images/cj_dance_01_03_1_00075.png", "body_bbox_list": [[149, 380, 242, 565]], "hand_bbox_list": [{"left_hand": [288.9151611328125, 376.70184326171875, 39.796295166015625, 51.72357177734375], "right_hand": [234.97779846191406, 363.4115295410156, 50.28489685058594, 57.89691162109375]}]}
@@ -98,6 +98,7 @@ For our body mocap module, we use [HMR](https://akanazawa.github.io/hmr/) networ
 - `--save_pred_pkl`: Save the pose reconstruction data (SMPL parameters and vertices) into pkl files   (requires `--out_dir ./outputdirname`)
 - `--save_bbox_output`: Save the bbox data in json files (bbox_xywh format) (requires `--out_dir ./outputdirname`)
 - `--no_display`: Do not visualize output on the screen
+- `--save_mesh`: Saving vertices and faces when save predicting results (otherwise, only smpl/smplx parameters are saved)
 
 ### Other Options
 - `--use_smplx`: Use SMPLX model for body pose estimation (instead of SMPL). This uses a different pre-trainined weights and may have different performance.
@@ -108,14 +109,17 @@ For our body mocap module, we use [HMR](https://akanazawa.github.io/hmr/) networ
 ## Mocap Output Format (pkl)
 As output, the 3D pose estimation data per frame is saved as a pkl file (with ```--pklout`` option). Each person's pose data is saved as follows:
 ```
-'parm_pose':  pose parameters in rot matrix form #(24,3, 3)
-'parm_shape': shape paramters #(10,)
-'parm_cam':  #[cam_scale, cam_offset_x,, cam_offset_y ]
-'bbox_xyxy': bounding box #[minX,minY,maxX,maxY]
-'subjectId': subjectId,   #currently this has an arbitrary index (TODO: tracking)
-'pred_vertices_imgspace': #3D SMPL vertices where X,Y are aligned to input image
-'pred_joints_imgspace': #3D joints where X,Y are aligned to input image
-'smpltype': 'smpl' or 'smplx' #depending on the use of --use_smplx option.
+'demo_type': ['body', 'hand', 'frank']
+'smpl_type': ['smplx', 'smpl']
+'pred_body_pose':  body pose parameters in angle-axis format # (24, 3, 3)
+'pred_left_hand_pose': hand pose parameters in angle-axis format # (16, 3, 3)
+'pred_betas': shape paramters # (10,)
+'pred_camera':  #[cam_scale, cam_offset_x,, cam_offset_y ]
+'pred_hand_bbox': bounding box for hand # {left_hand:[x,y,w,h], right_hand:[x,y,w,h]} or None
+'pred_body_bbox': bounding box for body # [x,y,w,h]
+'pred_vertices_smpl': # Original vertices from SMPL output
+'pred_vertices_img': #3D SMPL vertices where X,Y are aligned to input image
+'pred_joints_img': #3D joints where X,Y are aligned to input image
 ```
 
 ## Load Saved Mocap Data (pkl file)
