@@ -78,7 +78,7 @@ class BodyMocap(object):
                 pred_aa = pred_aa.reshape(pred_aa.shape[0], 72)
                 smpl_output = self.smpl(
                     betas=pred_betas, 
-                    body_pose=pred_aa[:,3:], 
+                    body_pose=pred_aa[:,3:],
                     global_orient=pred_aa[:,:3], 
                     pose2rot=True)
                 pred_vertices = smpl_output.vertices
