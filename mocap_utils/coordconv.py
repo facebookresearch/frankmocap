@@ -37,7 +37,12 @@ def convert_bbox_to_oriIm(data3D, boxScale_o2n, bboxTopLeft, imgSizeW, imgSizeH)
 
     data3D /= boxScale_o2n
 
-    data3D[:,:2] += (np.array(bboxTopLeft) + resnet_input_size_half/boxScale_o2n)
+    if not isinstance(bboxTopLeft, np.ndarray):
+        assert isinstance(bboxTopLeft, tuple)
+        assert len(bboxTopLeft) == 2
+        bboxTopLeft = np.array(bboxTopLeft)
+
+    data3D[:,:2] += (bboxTopLeft + resnet_input_size_half/boxScale_o2n)
 
     return data3D
 
@@ -72,61 +77,6 @@ def convert_smpl_to_bbox_perspective(data3D, scale_ori, trans_ori, focalLeng, sc
         data3D *=scaleFactor
 
     return data3D
-
-
-def convert_bbox_to_oriIm_perspective(data3D, boxScale_o2n, bboxTopLeft, imgSizeW, imgSizeH, focalLeng):
-
-    data3D = data3D.copy()
-    resnet_input_size_half = 224 *0.5
-    imgSize = np.array([imgSizeW, imgSizeH])
-
-    if False:
-        data3D/=boxScale_o2n
-        data3D[:,:2] += bboxTopLeft - imgSize*0.5 + resnet_input_size_half/boxScale_o2n
-    else:
-        scale = 1.0/boxScale_o2n
-        # print(f"Scale: {scale}")
-        # deltaZ =  focalLeng/scale - np.mean(data3D[:,2]) 
-        deltaZ =  np.mean(data3D[:,2])/scale - np.mean(data3D[:,2]) 
-        data3D[:,2] +=deltaZ
-        # data3D[:,2] += 400
-
-        trans = bboxTopLeft - imgSize*0.5 + resnet_input_size_half/boxScale_o2n
-        delta = np.mean(data3D[:,2]) /focalLeng *trans
-        # delta = (trans )*boxScale_o2n
-        data3D[:,:2] += delta
-
-    return data3D
-
-
-## Conversion for Antrho
-def anthro_crop_fromRaw(rawimage, bbox_XYXY):
-    bbox_w = bbox_XYXY[2] - bbox_XYXY[0]
-    bbox_h = bbox_XYXY[3] - bbox_XYXY[1]
-    bbox_size = max(bbox_w, bbox_h)     #take the max
-    bbox_center = (bbox_XYXY[:2] + bbox_XYXY[2:])*0.5
-    pt_ul = (bbox_center - bbox_size*0.5).astype(np.int32)
-    pt_br = (bbox_center + bbox_size*0.5).astype(np.int32)
-    croppedImg = rawimage[pt_ul[1]:pt_br[1], pt_ul[0]:pt_br[0]]
-    croppedImg = np.ascontiguousarray(croppedImg)
-    return rawimage, pt_ul, pt_br
-
-def anthro_convert_smpl_to_bbox(data3D, scale, trans, bbox_max_size):
-    resnet_input_size_half = bbox_max_size *0.5
-
-    data3D *= scale           #apply scaling
-    # data3D[:,0] += data3D[b,1]        #apply translation x
-    # data3D[:,1] += data3D[b,2]        #apply translation y
-    data3D[:,0:2] += trans
-    data3D*= resnet_input_size_half         #112 is originated from hrm's input size (224,24)
-
-    return data3D
-
-# def anthro_convert_bbox_to_oriIm(data3D, boxScale_o2n, bboxTopLeft, imgSizeW, imgSizeH):
-def anthro_convert_bbox_to_oriIm(pred_vert_vis, rawImg_w, rawImg_h, bbox_pt_ul, bbox_max_size):
-    pred_vert_vis[:,:2] +=  bbox_pt_ul - np.array((rawImg_w, rawImg_h))*0.5 +(bbox_max_size*0.5)  # + resnet_input_size_half#+ resnet_input_size_half 
-    return pred_vert_vis
-
 
 
 """ Extract bbox information """

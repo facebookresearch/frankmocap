@@ -14,9 +14,6 @@ from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 import mocap_utils.geometry_utils as gu
 
 
-
-from mocap_utils.geometry_utils import rotmat3x3_to_angleaxis
-
 class BodyMocap(object):
     def __init__(self, regressor_checkpoint, smpl_dir, device=torch.device('cuda'), use_smplx=False):
 
@@ -64,16 +61,9 @@ class BodyMocap(object):
         for body_bbox in body_bbox_list:
             img, norm_img, boxScale_o2n, bboxTopLeft, bbox = process_image_bbox(
                 img_original, body_bbox, input_res=constants.IMG_RES)
+            bboxTopLeft = np.array(bboxTopLeft)
 
             # bboxTopLeft = bbox['bboxXYWH'][:2]
-            '''
-            print("bboxTopLeft", bboxTopLeft)
-            print('img', img.shape)
-            cv2.imwrite("img.png", img)
-            print("here !!!!", )
-            sys.exit(0)
-            '''
-
             if img is None:
                 pred_output_list.append(None)
                 continue
@@ -83,8 +73,9 @@ class BodyMocap(object):
                 pred_rotmat, pred_betas, pred_camera = self.model_regressor(norm_img.to(self.device))
 
                 #Convert rot_mat to aa since hands are always in aa
-                pred_aa = rotmat3x3_to_angleaxis(pred_rotmat)
-                pred_aa = pred_aa.view(pred_aa.shape[0],-1)
+                # pred_aa = rotmat3x3_to_angle_axis(pred_rotmat)
+                pred_aa = gu.rotation_matrix_to_angle_axis(pred_rotmat).cuda()
+                pred_aa = pred_aa.reshape(pred_aa.shape[0], 72)
                 smpl_output = self.smpl(
                     betas=pred_betas, 
                     body_pose=pred_aa[:,3:], 
@@ -120,9 +111,7 @@ class BodyMocap(object):
                 pred_output['pred_vertices_img'] = pred_vertices_img # SMPL vertex in image space
                 pred_output['pred_joints_img'] = pred_joints_vis_img # SMPL joints in image space
 
-                pred_rotmat_tensor = torch.zeros((1, 24, 3, 4), dtype=torch.float32)
-                pred_rotmat_tensor[:, :, :, :3] = pred_rotmat.detach().cpu()
-                pred_aa_tensor = gu.rotation_matrix_to_angle_axis(pred_rotmat_tensor.squeeze())
+                pred_aa_tensor = gu.rotation_matrix_to_angle_axis(pred_rotmat.detach().cpu()[0])
                 pred_output['pred_body_pose'] = pred_aa_tensor.cpu().numpy().reshape(1, 72)
 
                 pred_output['pred_rotmat'] = pred_rotmat.detach().cpu().numpy() # (1, 24, 3, 3)

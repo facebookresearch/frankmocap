@@ -10,7 +10,6 @@ from torchvision.transforms import transforms
 from handmocap.hand_modules.test_options import TestOptions
 from handmocap.hand_modules.h3dw_model import H3DWModel
 from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
-import mocap_utils.geometry_utils as gu
 
 
 class HandMocap:
@@ -187,7 +186,7 @@ class HandMocap:
                         pred_output[hand_type]['faces'] = faces
 
                         pred_output[hand_type]['bbox_scale_ratio'] = bbox_scale_ratio
-                        pred_output[hand_type]['bbox_top_left'] = bbox_processed[:2]
+                        pred_output[hand_type]['bbox_top_left'] = np.array(bbox_processed[:2])
                         pred_output[hand_type]['pred_camera'] = cam
                         pred_output[hand_type]['img_cropped'] = img_cropped
 

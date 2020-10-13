@@ -218,7 +218,7 @@ def save_info_to_json(args, image_path, body_bbox_list, hand_bbox_list):
     img_name = osp.basename(image_path)
     record = img_name.split('.')
     json_name = f"{'.'.join(record[:-1])}_bbox.json"
-    json_path = osp.join(args.out_dir, 'mocap', json_name)
+    json_path = osp.join(args.out_dir, 'bbox', json_name)
     gnu.make_subdir(json_path)
     gnu.save_json(json_path, saved_data)
     print(f"Bbox saved: {json_path}")
@@ -241,7 +241,7 @@ def save_pred_to_pkl(
     saved_data = OrderedDict()
     saved_data['demo_type'] = demo_type
     saved_data['smpl_type'] = smpl_type
-    saved_data['image_path'] = image_path
+    saved_data['image_path'] = osp.abspath(image_path)
     saved_data['body_bbox_list'] = body_bbox_list
     saved_data['hand_bbox_list'] = hand_bbox_list
     saved_data['save_mesh'] = args.save_mesh
