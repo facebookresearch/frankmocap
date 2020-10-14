@@ -19,70 +19,76 @@ def get_kinematic_map(smplx_model, dst_idx):
     return kine_map
 
 
-def __transfer_hand_rot(body_pose_mat, hand_rot, kinematic_map, transfer_type):
-    # get global rotmat
+def __transfer_rot(body_pose_rotmat, part_rotmat, kinematic_map, transfer_type):
+
+    rotmat= body_pose_rotmat[0] 
     parent_id = 0
-    rotmat= body_pose_mat[0]    # global orientation of body
     while parent_id in kinematic_map:
         child_id = kinematic_map[parent_id]
-        local_rotmat = body_pose_mat[child_id]
+        local_rotmat = body_pose_rotmat[child_id]
         rotmat = torch.matmul(rotmat, local_rotmat)
         parent_id = child_id
 
-    if hand_rot.dim() == 2:
-        # hand rot in angle-axis format
-        assert hand_rot.size(0) == 1 and hand_rot.size(1) == 3
-    else:
-        # hand rot in rotation matrix format
-        assert hand_rot.dim() == 3
-        assert hand_rot.size(0) == 1 and hand_rot.size(1) == 3 and hand_rot.size(2) == 3
-
-    if hand_rot.dim() == 2:
-        # hand rot in angle-axis format
-        hand_rotmat = gu.angle_axis_to_rotation_matrix(hand_rot)[0,:3,:3]
-    else:
-        # hand rot in rotation matrix format
-        hand_rotmat = hand_rot[0,:3,:3]
-
     if transfer_type == 'g2l':
-        hand_rot_new = torch.matmul(rotmat.T, hand_rotmat)
+        part_rot_new = torch.matmul(rotmat.T, part_rotmat)
     else:
         assert transfer_type == 'l2g'
-        hand_rot_new = torch.matmul(rotmat, hand_rotmat)
+        part_rot_new = torch.matmul(rotmat, part_rotmat)
 
-    return hand_rot_new
+    return part_rot_new
 
 
-def transfer_hand_wrist(
-    smplx_model, body_pose, hand_wrist, hand_type, 
+def transfer_rotation(
+    smplx_model, body_pose, part_rot, part_idx, 
     transfer_type="g2l", result_format="rotmat"):
 
     assert transfer_type in ["g2l", "l2g"]
     assert result_format in ['rotmat', 'aa']
 
-    if hand_type == 'left_hand':
-        kinematic_map = get_kinematic_map(smplx_model, 20)
-    else:
-        assert hand_type == 'right_hand'
-        kinematic_map = get_kinematic_map(smplx_model, 21)
+    assert type(body_pose) == type(part_rot)
+    return_np = False
 
-    if transfer_type == "l2g":      
-        # local to global
-        hand_wrist_local = hand_wrist.clone()
-        hand_wrist_mat = __transfer_hand_rot(
-            body_pose, hand_wrist_local, kinematic_map, transfer_type)
+    if isinstance(body_pose, np.ndarray):
+        body_pose = torch.from_numpy(body_pose)
+        return_np = True
+    
+    if isinstance(part_rot, np.ndarray):
+        part_rot = torch.from_numpy(part_rot)
+        return_np = True
+
+    if body_pose.dim() == 2:
+        # aa
+        assert body_pose.size(0) == 1 and body_pose.size(1) in [66, 72]
+        body_pose_rotmat = gu.angle_axis_to_rotation_matrix(body_pose.view(22, 3)).clone()
     else:
-        # global to local
-        assert transfer_type == "g2l"
-        hand_wrist_global = hand_wrist.clone()
-        hand_wrist_mat = __transfer_hand_rot(
-            body_pose, hand_wrist_global, kinematic_map, transfer_type)
+        # rotmat
+        assert body_pose.dim() == 4
+        assert body_pose.size(0) == 1 and body_pose.size(1) in [22, 24]
+        assert body_pose.size(2) == 3 and body_pose.size(3) == 3
+        body_pose_rotmat = body_pose[0].clone()
+
+    if part_rot.dim() == 2:
+        # aa
+        assert part_rot.size(0) == 1 and part_rot.size(1) == 3
+        part_rotmat = gu.angle_axis_to_rotation_matrix(part_rot)[0,:3,:3].clone()
+    else:
+        # rotmat
+        assert part_rot.dim() == 3
+        assert part_rot.size(0) == 1 and part_rot.size(1) == 3 and part_rot.size(2) == 3
+        part_rotmat = part_rot[0,:3,:3].clone()
+
+    kinematic_map = get_kinematic_map(smplx_model, part_idx)
+    part_rot_trans = __transfer_rot(
+        body_pose_rotmat, part_rotmat, kinematic_map, transfer_type)
 
     if result_format == 'rotmat':    
-        return hand_wrist_mat
+        return_value = part_rot_trans
     else:
-        hand_wrist_aa = gu.rotation_matrix_to_angle_axis(hand_wrist_mat)
-        return hand_wrist_aa
+        part_rot_aa = gu.rotation_matrix_to_angle_axis(part_rot_trans)
+        return_value = part_rot_aa
+    if return_np:
+        return_value = return_value.numpy()
+    return return_value
 
 
 def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape):
@@ -103,8 +109,8 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         if hand_info is not None and hand_info['right_hand'] is not None:
             right_hand_pose = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:, 3:]).cuda()
             right_hand_global_orient = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:,: 3]).cuda()
-            right_hand_local_orient = transfer_hand_wrist(
-                smplx_model, pred_rotmat[0], right_hand_global_orient, 'right_hand')
+            right_hand_local_orient = transfer_rotation(
+                smplx_model, pred_rotmat, right_hand_global_orient, 21)
             pred_rotmat[0, 21] = right_hand_local_orient
         else:
             right_hand_pose = torch.from_numpy(np.zeros( (1,45) , dtype= np.float32)).cuda()
@@ -115,8 +121,8 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         if hand_info is not None and hand_info['left_hand'] is not None:
             left_hand_pose = torch.from_numpy(hand_info['left_hand']['pred_hand_pose'][:, 3:]).cuda()
             left_hand_global_orient = torch.from_numpy(hand_info['left_hand']['pred_hand_pose'][:, :3]).cuda()
-            left_hand_local_orient = transfer_hand_wrist(
-                smplx_model, pred_rotmat[0], left_hand_global_orient, 'left_hand')
+            left_hand_local_orient = transfer_rotation(
+                smplx_model, pred_rotmat, left_hand_global_orient, 20)
             pred_rotmat[0, 20] = left_hand_local_orient
         else:
             left_hand_pose = torch.from_numpy(np.zeros((1,45), dtype= np.float32)).cuda()
@@ -161,20 +167,19 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
             pred_vertices_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
         integral_output['pred_vertices_img'] = pred_vertices_img
 
-
         # keep hand info
         r_hand_local_orient_body = body_info['pred_rotmat'][:, 21] # rot-mat
-        r_hand_global_orient_body = transfer_hand_wrist(
-            smplx_model, pred_rotmat[0],
-            torch.from_numpy(r_hand_local_orient_body).cuda(), 
-            'right_hand', 'l2g', 'aa').numpy().reshape(1, 3) # aa
+        r_hand_global_orient_body = transfer_rotation(
+            smplx_model, pred_rotmat,
+            torch.from_numpy(r_hand_local_orient_body).cuda(),
+            21, 'l2g', 'aa').numpy().reshape(1, 3) # aa
         r_hand_local_orient_body = gu.rotation_matrix_to_angle_axis(r_hand_local_orient_body) # rot-mat -> aa
 
         l_hand_local_orient_body = body_info['pred_rotmat'][:, 20]
-        l_hand_global_orient_body = transfer_hand_wrist(
-            smplx_model, pred_rotmat[0],
-            torch.from_numpy(l_hand_local_orient_body).cuda(), 
-            'left_hand', 'l2g', 'aa').numpy().reshape(1, 3)
+        l_hand_global_orient_body = transfer_rotation(
+            smplx_model, pred_rotmat,
+            torch.from_numpy(l_hand_local_orient_body).cuda(),
+            20, 'l2g', 'aa').numpy().reshape(1, 3)
         l_hand_local_orient_body = gu.rotation_matrix_to_angle_axis(l_hand_local_orient_body) # rot-mat -> aa
 
         r_hand_local_orient_hand = None
@@ -205,17 +210,36 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         integral_output['pred_left_hand_pose'] = left_hand_pose.detach().cpu().numpy()
         integral_output['pred_right_hand_pose'] = right_hand_pose.detach().cpu().numpy()
 
-        # hand betas
-        integral_output['pred_left_hand_betas'] = hand_info['left_hand']['pred_hand_betas']
-        integral_output['pred_right_hand_betas'] = hand_info['right_hand']['pred_hand_betas']
+        # predicted hand betas, cameras, top-left corner and center
+        left_hand_betas = None
+        left_hand_camera = None
+        left_hand_bbox_scale = None
+        left_hand_bbox_top_left = None
+        if hand_info is not None and hand_info['left_hand'] is not None:
+            left_hand_betas = hand_info['left_hand']['pred_hand_betas']
+            left_hand_camera = hand_info['left_hand']['pred_camera']
+            left_hand_bbox_scale = hand_info['left_hand']['bbox_scale_ratio']
+            left_hand_bbox_top_left = hand_info['left_hand']['bbox_top_left']
 
-        # predicted hand cameras, top-left corner and center
-        integral_output['pred_left_hand_camera'] = hand_info['left_hand']['pred_camera']
-        integral_output['pred_right_hand_camera'] = hand_info['right_hand']['pred_camera']
-        integral_output['left_hand_bbox_scale_ratio'] = hand_info['left_hand']['bbox_scale_ratio']
-        integral_output['right_hand_bbox_scale_ratio'] = hand_info['right_hand']['bbox_scale_ratio']
-        integral_output['left_hand_bbox_top_left'] = hand_info['left_hand']['bbox_top_left']
-        integral_output['right_hand_bbox_top_left'] = hand_info['right_hand']['bbox_top_left']
+        right_hand_betas = None
+        right_hand_camera = None
+        right_hand_bbox_scale = None
+        right_hand_bbox_top_left = None
+        if hand_info is not None and hand_info['right_hand'] is not None:
+            right_hand_betas = hand_info['right_hand']['pred_hand_betas']
+            right_hand_camera = hand_info['right_hand']['pred_camera']
+            right_hand_bbox_scale = hand_info['right_hand']['bbox_scale_ratio']
+            right_hand_bbox_top_left = hand_info['right_hand']['bbox_top_left']
+
+        integral_output['pred_left_hand_betas'] = left_hand_betas
+        integral_output['left_hand_camera'] = left_hand_camera
+        integral_output['left_hand_bbox_scale_ratio'] = left_hand_bbox_scale
+        integral_output['left_hand_bbox_top_left'] = left_hand_bbox_top_left
+
+        integral_output['pred_right_hand_betas'] = right_hand_betas
+        integral_output['right_hand_camera'] = right_hand_camera
+        integral_output['right_hand_bbox_scale_ratio'] = right_hand_bbox_scale
+        integral_output['right_hand_bbox_top_left'] = right_hand_bbox_top_left
 
         integral_output_list.append(integral_output)
 
