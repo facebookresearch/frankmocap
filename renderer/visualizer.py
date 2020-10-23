@@ -188,8 +188,9 @@ class Visualizer(object):
             for m in meshList:
                 m['ver'] *=ratio
 
-            for s in skelList:
-                s *=ratio
+            if skelList is not None:
+                for s in skelList:
+                    s *=ratio
 
 
         else:
