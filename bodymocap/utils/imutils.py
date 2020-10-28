@@ -477,3 +477,19 @@ def deNormalizeBatchImg(normTensorImg):
     deNormImg = np.ascontiguousarray(deNormImg, dtype=np.uint8)
 
     return deNormImg
+
+
+
+def j2d_normalize(kp, center, scale):
+    """Input: image coordinate
+    Output: normalized coordinate, -1 to 1"""
+    IMG_RES =224
+
+    nparts = kp.shape[0]
+    for i in range(nparts):
+        kp[i,0:2] = transform(kp[i,0:2]+1, center, scale, [IMG_RES, IMG_RES])
+    # convert to normalized coordinates
+    kp[:,:-1] = 2.*kp[:,:-1]/IMG_RES - 1.         #-1 to 1
+    # flip the x coordinates
+    kp = kp.astype('float32')
+    return kp

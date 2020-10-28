@@ -45,6 +45,9 @@ class DemoOptions():
         #For optimization-based integration
         parser.add_argument('--integrate_type', type=str, default='copy_paste', choices=['copy_paste', 'opt'],help="Frankmopca Integration type")     #Copy-and-paste or optimization
         parser.add_argument('--open_pose_dir', type=str, default=None, help="""Open pose directory for frankmocap with optimization""")
+        parser.add_argument('--post_proc_eft', action="store_true", help="""Apply eft post processing. Only valid for body_mocap""")
+
+        
 
 
 

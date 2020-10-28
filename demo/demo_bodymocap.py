@@ -40,6 +40,18 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             else:
                 img_original_bgr = None
 
+            if args.post_proc_eft:
+                assert args.open_pose_dir is not None
+
+                #Note: current openpose name should be {raw_image_name}_keypoints.json
+                f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
+                openpose_file_path = os.path.join(args.open_pose_dir,f_name)
+                assert os.path.exists(openpose_file_path)
+                print(f"Loading openpose data from: {openpose_file_path}")
+                openpose_imgcoord, op_people_selected = demo_utils.read_openpose_wHand(openpose_file_path,dataset='coco')      #25, 3       #TODO: this works for single person in the image
+                assert openpose_imgcoord is not None
+
+
         elif input_type == 'bbox_dir':
             if cur_frame < len(input_data):
                 print("Use pre-computed bounding boxes")
@@ -109,7 +121,10 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             body_bbox_list = [body_bbox_list[0], ]       
 
         # Body Pose Regression
-        pred_output_list = body_mocap.regress(img_original_bgr, body_bbox_list)
+        if args.post_proc_eft:  
+            pred_output_list = body_mocap.regress_and_eft(img_original_bgr, body_bbox_list, openpose_imgcoord)     #Apply eft post processing with openpose
+        else:
+            pred_output_list = body_mocap.regress(img_original_bgr, body_bbox_list)
         assert len(body_bbox_list) == len(pred_output_list)
 
         # extract mesh for rendering (vertices in image space and faces) from pred_output_list
@@ -140,7 +155,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
         print(f"Processed : {image_path}")
 
     #save images as a video
-    if not args.no_video_out and input_type in ['video', 'webcam']:
+    if not args.no_video_out and input_type in ['image_dir', 'video', 'webcam']:
         demo_utils.gen_video_out(args.out_dir, args.seq_name)
 
     if input_type =='webcam' and input_data is not None:

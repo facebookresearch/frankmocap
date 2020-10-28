@@ -232,20 +232,20 @@ class Body_eft():
         pred_vertices = pred_output.vertices
         pred_joints_3d = pred_output.joints
         pred_keypoints_2d = weakProjection_gpu(pred_joints_3d, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
-        pred_right_hand_2d = weakProjection_gpu(pred_output.right_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
-        pred_left_hand_2d = weakProjection_gpu(pred_output.left_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
+        # pred_right_hand_2d = weakProjection_gpu(pred_output.right_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
+        # pred_left_hand_2d = weakProjection_gpu(pred_output.left_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
         
 
         #Get GT data 
         gt_keypoints_2d = input_batch['body_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
-        gt_rhand_2d = input_batch['rhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
-        gt_lhand_2d = input_batch['lhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
+        # gt_rhand_2d = input_batch['rhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
+        # gt_lhand_2d = input_batch['lhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         init_rotmat = input_batch['init_rotmat']# 2D keypoints           #[N,49,3]  or [N,25,3]
 
         loss_keypoints_2d = self.keypoint_loss_openpose25(pred_keypoints_2d, gt_keypoints_2d,1.0)
                                             #self.options.openpose_train_weight)
 
-        loss_keypoints_2d_hand = self.keypoint_loss_keypoint21(pred_right_hand_2d, gt_rhand_2d,1.0) + self.keypoint_loss_keypoint21(pred_left_hand_2d, gt_lhand_2d,1.0)
+        # loss_keypoints_2d_hand = self.keypoint_loss_keypoint21(pred_right_hand_2d, gt_rhand_2d,1.0) + self.keypoint_loss_keypoint21(pred_left_hand_2d, gt_lhand_2d,1.0)
 
 
         loss_pose_3d = self.criterion_keypoints(init_rotmat, pred_rotmat).mean()         #pred_rotmat [N,24,3,3]
@@ -313,8 +313,6 @@ class Body_eft():
 
                         # hand_mesh_extend = hand_mesh_extend + deltaWrist
 
-
-                        
                         hand_mesh_extend_conf = np.zeros(pred_vertices_bbox.shape, dtype=np.float32)
                         hand_mesh_extend_conf[0,vertId_map,:] = 1.0
                         hand_mesh_extend_conf = torch.from_numpy(hand_mesh_extend_conf).to(self.device)
@@ -340,8 +338,8 @@ class Body_eft():
         if True:
             loss = loss + self.keypoint_loss_weight * loss_keypoints_2d * 50
         
-        if True:
-            loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50
+        # if True:
+        #     loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50
         #         
         
         # loss = loss_pose_3d + \

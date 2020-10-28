@@ -13,6 +13,9 @@ from bodymocap.utils.imutils import crop, crop_bboxInfo, process_image_bbox, pro
 from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 import mocap_utils.geometry_utils as gu
 
+from bodymocap.body_eft import Body_eft
+
+from bodymocap.utils.imutils import j2d_normalize, conv_bbox_xywh_to_center_scale
 
 class BodyMocap(object):
     def __init__(self, regressor_checkpoint, smpl_dir, device=torch.device('cuda'), use_smplx=False):
@@ -149,6 +152,150 @@ class BodyMocap(object):
 
         return pred_output_list
     
+
+    def regress_and_eft(self, img_original, body_bbox_list, openpose_kp_imgcoord):
+        """
+            args: 
+                img_original: original raw image (BGR order by using cv2.imread)
+                body_bbox: bounding box around the target: (minX, minY, width, height)
+
+                openpose_imgcoord: loaded openpose data
+            outputs:
+                pred_vertices_img:
+                pred_joints_vis_img:
+                pred_rotmat
+                pred_betas
+                pred_camera
+                bbox: [bbr[0], bbr[1],bbr[0]+bbr[2], bbr[1]+bbr[3]])
+                bboxTopLeft:  bbox top left (redundant)
+                boxScale_o2n: bbox scaling factor (redundant) 
+        """
+
+        eft = Body_eft(self.model_regressor, self.smpl)
+        image_shape = img_original.shape
+
+        #TODO: current version assumes a single subject in the image
+        assert len(body_bbox_list) ==1
+        #Convert Openpose image process to body bbox space
+        bboxInfo = conv_bbox_xywh_to_center_scale(body_bbox_list[0], image_shape)
+        openpose_bboxNormcoord={}       #BBox normalize coordinate (-1 to 1)
+        openpose_bboxNormcoord['pose_keypoints_2d'] = j2d_normalize(openpose_kp_imgcoord['pose_keypoints_2d'], bboxInfo['center'], bboxInfo['scale'])[np.newaxis,:]    #(N,25,3)       -1 to 1 normalize coord
+
+        pred_output_list = list()
+
+        for body_bbox in body_bbox_list:
+            img, norm_img, boxScale_o2n, bboxTopLeft, bbox = process_image_bbox(
+                img_original, body_bbox, input_res=constants.IMG_RES)
+            bboxTopLeft = np.array(bboxTopLeft)
+
+            # bboxTopLeft = bbox['bboxXYWH'][:2]
+            if img is None:
+                pred_output_list.append(None)
+                continue
+
+
+            if False:    #Visualize Bbox and Openpose
+                import renderer.viewer2D as viewer2D
+                img_cropped_vis = img
+                img_cropped_vis = viewer2D.Vis_Skeleton_2D_Openpose25( (openpose_bboxNormcoord['pose_keypoints_2d'][0,:,:2]+1)*112, openpose_bboxNormcoord['pose_keypoints_2d'][0,:,2],image =img_cropped_vis)
+                viewer2D.ImShow(img_cropped_vis, waitTime=0, scale=4.0, name="openpose_cropped")
+
+            # with torch.no_grad():
+            if True:
+                # model forward
+                pred_rotmat, pred_betas, pred_camera = self.model_regressor(norm_img.to(self.device))
+
+                input_batch ={}
+                input_batch['img'] = norm_img # input image [1,3,224,224]
+                input_batch['init_rotmat'] = pred_rotmat # input image     #[1,24,3,3]
+                input_batch['body_joints_2d_bboxNormCoord'] = torch.from_numpy(openpose_bboxNormcoord['pose_keypoints_2d']).cuda()
+
+                # input_batch['rhand_pose']  = None
+                # input_batch['lhand_pose'] = None
+
+                #Additional data for visualization
+                input_batch['img_cropped_rgb'] = img
+
+                pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = False)
+
+
+                #Convert rot_mat to aa since hands are always in aa
+                # pred_aa = rotmat3x3_to_angle_axis(pred_rotmat)
+                pred_aa = gu.rotation_matrix_to_angle_axis(pred_rotmat).cuda()
+                pred_aa = pred_aa.reshape(pred_aa.shape[0], 72)
+                smpl_output = self.smpl(
+                    betas=pred_betas, 
+                    body_pose=pred_aa[:,3:],
+                    global_orient=pred_aa[:,:3], 
+                    pose2rot=True)
+                pred_vertices = smpl_output.vertices.detach()
+                pred_joints_3d = smpl_output.joints.detach()
+
+                pred_vertices = pred_vertices[0].detach().cpu().numpy()
+
+                pred_camera = pred_camera.detach().cpu().numpy().ravel()
+                camScale = pred_camera[0] # *1.15
+                camTrans = pred_camera[1:]
+
+                pred_output = dict()
+                # Convert mesh to original image space (X,Y are aligned to image)
+                # 1. SMPL -> 2D bbox
+                # 2. 2D bbox -> original 2D image
+                pred_vertices_bbox = convert_smpl_to_bbox(pred_vertices, camScale, camTrans)
+                pred_vertices_img = convert_bbox_to_oriIm(
+                    pred_vertices_bbox, boxScale_o2n, bboxTopLeft, img_original.shape[1], img_original.shape[0])
+
+                # Convert joint to original image space (X,Y are aligned to image)
+                pred_joints_3d = pred_joints_3d[0].cpu().numpy() # (1,49,3)
+                pred_joints_vis = pred_joints_3d[:,:3]  # (49,3)
+                pred_joints_vis_bbox = convert_smpl_to_bbox(pred_joints_vis, camScale, camTrans) 
+                pred_joints_vis_img = convert_bbox_to_oriIm(
+                    pred_joints_vis_bbox, boxScale_o2n, bboxTopLeft, img_original.shape[1], img_original.shape[0]) 
+
+                # Output
+                pred_output['img_cropped'] = img[:, :, ::-1]
+                pred_output['pred_vertices_smpl'] = smpl_output.vertices[0].detach().cpu().numpy() # SMPL vertex in original smpl space
+                pred_output['pred_vertices_img'] = pred_vertices_img # SMPL vertex in image space
+                pred_output['pred_joints_img'] = pred_joints_vis_img # SMPL joints in image space
+
+                pred_aa_tensor = gu.rotation_matrix_to_angle_axis(pred_rotmat.detach().cpu()[0])
+                pred_output['pred_body_pose'] = pred_aa_tensor.cpu().numpy().reshape(1, 72)
+
+                pred_output['pred_rotmat'] = pred_rotmat.detach().cpu().numpy() # (1, 24, 3, 3)
+                pred_output['pred_betas'] = pred_betas.detach().cpu().numpy() # (1, 10)
+
+                pred_output['pred_camera'] = pred_camera
+                pred_output['bbox_top_left'] = bboxTopLeft
+                pred_output['bbox_scale_ratio'] = boxScale_o2n
+                pred_output['faces'] = self.smpl.faces
+
+                #Additionally required outputs (for optimizaition-based integration)
+                pred_output['bbox_scale'] = bbox['scale']
+                pred_output['bbox_center'] = bbox['center']
+                pred_output['img_cropped'] = img 
+                pred_output['img_cropped_norm'] = norm_img
+
+
+                if self.use_smplx:
+                    img_center = np.array((img_original.shape[1], img_original.shape[0]) ) * 0.5
+                    # right hand
+                    pred_joints = smpl_output.right_hand_joints[0].cpu().numpy()     
+                    pred_joints_bbox = convert_smpl_to_bbox(pred_joints, camScale, camTrans)
+                    pred_joints_img = convert_bbox_to_oriIm(
+                        pred_joints_bbox, boxScale_o2n, bboxTopLeft, img_original.shape[1], img_original.shape[0])
+                    pred_output['right_hand_joints_img_coord'] = pred_joints_img
+                    # left hand 
+                    pred_joints = smpl_output.left_hand_joints[0].cpu().numpy()
+                    pred_joints_bbox = convert_smpl_to_bbox(pred_joints, camScale, camTrans)
+                    pred_joints_img = convert_bbox_to_oriIm(
+                        pred_joints_bbox, boxScale_o2n, bboxTopLeft, img_original.shape[1], img_original.shape[0])
+                    pred_output['left_hand_joints_img_coord'] = pred_joints_img
+                
+                pred_output_list.append(pred_output)
+
+        return pred_output_list
+    
+
 
     def get_hand_bboxes(self, pred_body_list, img_shape):
         """

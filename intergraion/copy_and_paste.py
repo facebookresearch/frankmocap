@@ -8,10 +8,10 @@ import mocap_utils.geometry_utils as gu
 from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 # from mocap_utils.geometry_utils import rotmat3x3_to_angleaxis
 
-from bodymocap.utils.imutils import transform, conv_bbox_xywh_to_center_scale
+from bodymocap.utils.imutils import j2d_normalize, conv_bbox_xywh_to_center_scale
 
 import renderer.viewer2D as viewer2D
-from bodymocap.body_eft import Body_eft
+from bodymocap.wholebody_eft import Whole_Body_eft
 
 
 def get_kinematic_map(smplx_model, dst_idx):
@@ -252,27 +252,12 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
     return integral_output_list
 
 
-def j2d_normalize(kp, center, scale):
-    """Input: image coordinate
-    Output: normalized coordinate, -1 to 1"""
-    IMG_RES =224
-
-    nparts = kp.shape[0]
-    for i in range(nparts):
-        kp[i,0:2] = transform(kp[i,0:2]+1, center, scale, [IMG_RES, IMG_RES])
-    # convert to normalized coordinates
-    kp[:,:-1] = 2.*kp[:,:-1]/IMG_RES - 1.         #-1 to 1
-    # flip the x coordinates
-    kp = kp.astype('float32')
-    return kp
-
-
 def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_list, pred_hand_list, smplx_model, img_original_bgr, body_bbox_list):
     """
     Peform EFT optimization given 2D keypoint
     """
 
-    eft = Body_eft(body_module.model_regressor, body_module.smpl)
+    eft = Whole_Body_eft(body_module.model_regressor, body_module.smpl)
     image_shape = img_original_bgr.shape
     is_vis = True
 
