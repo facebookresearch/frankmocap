@@ -17,6 +17,7 @@ class DemoOptions():
 
         #input options
         parser.add_argument('--input_path', type=str, default=None, help="""Path of video, image, or a folder where image files exists""")
+        parser.add_argument('--open_pose_dir', type=str, default=None, help="""Open pose directory for frankmocap with optimization""")
         parser.add_argument('--start_frame', type=int, default=0, help='given a sequence of frames, set the starting frame')
         parser.add_argument('--end_frame', type=int, default=float('inf'), help='given a sequence of frames, set the last frame')
         parser.add_argument('--pkl_dir', type=str, help='Path of storing pkl files that store the predicted results')
@@ -38,6 +39,9 @@ class DemoOptions():
         parser.add_argument('--skip', action='store_true', help='Skip there exist already processed outputs')
         parser.add_argument('--video_url', type=str, default=None, help='URL of YouTube video, or image.')
         parser.add_argument('--download', '-d', action='store_true', help='Download YouTube video first (in webvideo folder), and process it')
+
+        #Intergration options
+        parser.add_argument('--integrate_type', type=str, default='opt', choices=['copy_paste', 'opt'],help="Frankmopca Integration type")     #Copy-and-paste or optimization
 
         # Body mocap specific options
         parser.add_argument('--use_smplx', action='store_true', help='Use SMPLX model for body mocap')

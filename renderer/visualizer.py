@@ -262,7 +262,8 @@ class Visualizer(object):
                 glViewer.setNearPlane(50)
                 glViewer.setWindowSize(img_original.shape[1], img_original.shape[0])
                 # glViewer.show_SMPL(bSaveToFile = True, bResetSaveImgCnt = False, countImg = False, mode = 'camera')
-                glViewer.show(1)
+                # glViewer.show(1)
+                glViewer.show(0)
 
             if False:    #Side view rendering
                 # glViewer.setSaveFolderName(sideImageFolder)

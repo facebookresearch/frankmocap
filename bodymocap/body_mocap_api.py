@@ -40,6 +40,7 @@ class BodyMocap(object):
         self.model_regressor.load_state_dict(checkpoint['model'], strict=False)
         self.model_regressor.eval()
         
+        
 
     def regress(self, img_original, body_bbox_list):
         """
@@ -121,6 +122,13 @@ class BodyMocap(object):
                 pred_output['bbox_top_left'] = bboxTopLeft
                 pred_output['bbox_scale_ratio'] = boxScale_o2n
                 pred_output['faces'] = self.smpl.faces
+
+                #Additionally required outputs (for optimizaition-based integration)
+                pred_output['bbox_scale'] = bbox['scale']
+                pred_output['bbox_center'] = bbox['center']
+                pred_output['img_cropped'] = img 
+                pred_output['img_cropped_norm'] = norm_img
+
 
                 if self.use_smplx:
                     img_center = np.array((img_original.shape[1], img_original.shape[0]) ) * 0.5

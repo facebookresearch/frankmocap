@@ -22,7 +22,7 @@ from datetime import datetime
 
 from bodymocap.body_bbox_detector import BodyPoseEstimator
 from handmocap.hand_bbox_detector import HandBboxDetector
-from intergraion.copy_and_paste import intergration_copy_paste
+from intergraion.copy_and_paste import intergration_copy_paste, intergration_eft_optimization
 
 from renderer.viewer2D import ImShow
 
@@ -44,7 +44,8 @@ def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
 def run_regress(
     args, img_original_bgr, 
     body_bbox_list, hand_bbox_list, bbox_detector,
-    body_mocap, hand_mocap
+    body_mocap, hand_mocap,
+    openpose_kp_imgcoord= None  #Required for optimization-based integration
 ):
     cond1 = len(body_bbox_list) > 0 and len(hand_bbox_list) > 0
     cond2 = not args.frankmocap_fast_mode
@@ -100,8 +101,14 @@ def run_regress(
         assert len(hand_bbox_list) == len(pred_hand_list) 
 
     # intergration by copy-and-paste
-    integral_output_list = intergration_copy_paste(
-        pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape)
+    if args.integrate_type=='copy_paste':
+        print("Run copy-paste integration")
+        integral_output_list = intergration_copy_paste(
+            pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape)
+    else:   #Optimization
+        print("Run optimization-based integration")
+        integral_output_list = intergration_eft_optimization(body_mocap, openpose_kp_imgcoord, 
+            pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr, body_bbox_list)
     
     return body_bbox_list, hand_bbox_list, integral_output_list
 
@@ -116,12 +123,26 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         # load data
         load_bbox = False
 
+        openpose_imgcoord = None
         if input_type =='image_dir':
             if cur_frame < len(input_data):
                 image_path = input_data[cur_frame]
                 img_original_bgr  = cv2.imread(image_path)
             else:
                 img_original_bgr = None
+
+            #Optimization based integration. This requires openpose data
+            if args.integrate_type=='opt':
+                assert args.open_pose_dir is not None
+
+                #Note: current openpose name should be {raw_image_name}_keypoints.json
+                f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
+                openpose_file_path = os.path.join(args.open_pose_dir,f_name)
+                assert os.path.exists(openpose_file_path)
+                print(f"Loading openpose data from: {openpose_file_path}")
+                openpose_imgcoord, op_people_selected = demo_utils.read_openpose_wHand(openpose_file_path,dataset='coco')      #25, 3       #TODO: this works for single person in the image
+                assert openpose_imgcoord is not None
+
 
         elif input_type == 'bbox_dir':
             if cur_frame < len(input_data):
@@ -175,7 +196,8 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         body_bbox_list, hand_bbox_list, pred_output_list = run_regress(
             args, img_original_bgr, 
             body_bbox_list, hand_bbox_list, bbox_detector,
-            body_mocap, hand_mocap)
+            body_mocap, hand_mocap,
+            openpose_imgcoord)      #openpose_imgcoord is required for optimization-based integration
 
         # save the obtained body & hand bbox to json file
         if args.save_bbox_output: 

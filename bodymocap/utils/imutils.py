@@ -456,6 +456,11 @@ def process_image_bbox(img_original, bbox_XYWH, input_res=224):
     return img, norm_img, boxScale_o2n, bboxTopLeft, bboxInfo
 
 
+def conv_bbox_xywh_to_center_scale(bbox_XYWH, img_shape):
+    center, scale = bbox_from_bbr(bbox_XYWH, imageHeight = img_shape)
+
+    bboxInfo ={"center": center, "scale": scale, "bboxXYWH":bbox_XYWH}
+    return bboxInfo
 
 g_de_normalize_img = Normalize(mean=[ -constants.IMG_NORM_MEAN[0]/constants.IMG_NORM_STD[0]    , -constants.IMG_NORM_MEAN[1]/constants.IMG_NORM_STD[1], -constants.IMG_NORM_MEAN[2]/constants.IMG_NORM_STD[2]], std=[1/constants.IMG_NORM_STD[0], 1/constants.IMG_NORM_STD[1], 1/constants.IMG_NORM_STD[2]])
 def deNormalizeBatchImg(normTensorImg):

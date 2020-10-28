@@ -3,7 +3,7 @@
 Our whole body motion capture is based on our [FrankMocap paper](https://penincillin.github.io/frank_mocap), by intergrating the output of body module and hand module. See our paper for details.
 
 <p>
-    <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/frankmocap_wholebody.gif" height="250">
+    <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/frankmocap_wholebody.gif" height="250pred_body_list">
 </p>
 
 ## Requirements
