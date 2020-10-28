@@ -252,7 +252,7 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
     return integral_output_list
 
 
-def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_list, pred_hand_list, smplx_model, img_original_bgr, body_bbox_list):
+def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_list, pred_hand_list, smplx_model, img_original_bgr, body_bbox_list, is_debug_vis=False):
     """
     Peform EFT optimization given 2D keypoint
     """
@@ -305,23 +305,30 @@ def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_l
         input_batch['rhand_joints_2d_bboxNormCoord'] =torch.from_numpy( openpose_bboxNormcoord['hand_right_keypoints_2d']).cuda()
         input_batch['lhand_joints_2d_bboxNormCoord'] = torch.from_numpy(openpose_bboxNormcoord['hand_left_keypoints_2d']).cuda()
 
-        right_hand_pose = None
-        left_hand_pose = None
+        scale_ratio_image_to_bbox = pred_body_list[i]['bbox_scale_ratio']
+        input_batch['rhand_pose'] = None
+        input_batch['lhand_pose'] = None
         if hand_info is not None and hand_info['right_hand'] is not None:
-            right_hand_pose = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:, 3:]).cuda()
+            input_batch['rhand_pose'] = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:, 3:]).cuda()
+            input_batch['rhand_verts'] = torch.from_numpy( hand_info['right_hand']['pred_vertices_img']).cuda() * scale_ratio_image_to_bbox
+            input_batch['rhand_joints'] = torch.from_numpy( hand_info['right_hand']['pred_joints_img']).cuda()  * scale_ratio_image_to_bbox
+            input_batch['rhand_faces'] = hand_info['right_hand']['faces']
         else:
-            right_hand_pose = torch.from_numpy(np.zeros( (1,45) , dtype= np.float32)).cuda()
+            input_batch['rhand_pose'] = None#torch.from_numpy(np.zeros( (1,45) , dtype= np.float32)).cuda()
+
         if hand_info is not None and hand_info['left_hand'] is not None:
-            left_hand_pose = torch.from_numpy(hand_info['left_hand']['pred_hand_pose'][:, 3:]).cuda()
+            input_batch['lhand_pose'] = left_hand_pose = torch.from_numpy(hand_info['left_hand']['pred_hand_pose'][:, 3:]).cuda()
+            input_batch['lhand_verts'] = torch.from_numpy( hand_info['left_hand']['pred_vertices_img']).cuda()  *scale_ratio_image_to_bbox
+            input_batch['lhand_joints'] = torch.from_numpy( hand_info['left_hand']['pred_joints_img']).cuda()  *scale_ratio_image_to_bbox
+            input_batch['lhand_faces'] = hand_info['left_hand']['faces']
         else:
-            left_hand_pose = torch.from_numpy(np.zeros((1,45), dtype= np.float32)).cuda()
-        input_batch['rhand_pose']  = right_hand_pose
-        input_batch['lhand_pose'] = left_hand_pose
+            input_batch['lhand_pose'] = None#torch.from_numpy(np.zeros((1,45), dtype= np.float32)).cuda()
+        
 
         #Additional data for visualization
         input_batch['img_cropped_rgb'] = body_info['img_cropped'] 
 
-        pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = False)
+        pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = is_debug_vis)
 
         #Save output
         body_info['eft_pred_betas'] = pred_rotmat.detach().cpu().numpy()
@@ -336,8 +343,8 @@ def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_l
             betas = pred_betas, 
             body_pose = pred_aa[:,3:], 
             global_orient = pred_aa[:,:3],
-            right_hand_pose = right_hand_pose, 
-            left_hand_pose= left_hand_pose,
+            right_hand_pose = input_batch['rhand_pose'],#right_hand_pose, 
+            left_hand_pose= input_batch['lhand_pose'], #left_hand_pose,
             pose2rot = True)
 
         pred_vertices = smplx_output.vertices
@@ -372,8 +379,15 @@ def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_l
         integral_output['pred_body_pose'] = pred_aa_tensor.cpu().numpy().reshape(1, 72)
         integral_output['pred_betas'] = pred_betas.detach().cpu().numpy()
 
-        integral_output['pred_left_hand_pose'] = left_hand_pose.detach().cpu().numpy()
-        integral_output['pred_right_hand_pose'] = right_hand_pose.detach().cpu().numpy()
+        if input_batch['lhand_pose'] is not None:
+            integral_output['pred_left_hand_pose'] = input_batch['lhand_pose'].detach().cpu().numpy()
+        else:
+            integral_output['pred_left_hand_pose'] = None
+
+        if input_batch['rhand_pose'] is not None:
+            integral_output['pred_right_hand_pose'] = input_batch['rhand_pose'].detach().cpu().numpy()
+        else:
+            integral_output['pred_right_hand_pose'] = None
 
         # convert mesh to original image space (X,Y are aligned to image)
         pred_vertices_bbox = convert_smpl_to_bbox(

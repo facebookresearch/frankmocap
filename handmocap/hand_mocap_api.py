@@ -171,12 +171,14 @@ class HandMocap:
                         ##Output
                         cam = pred_res['cams'][0, :]  #scale, tranX, tranY
                         pred_verts_origin = pred_res['pred_verts'][0]
+                        pred_joints_origin = pred_res['pred_joints_3d'][0]
                         faces = self.model_regressor.right_hand_faces_local
                         pred_pose = pred_res['pred_pose_params'].copy()
 
                         if hand_type == 'left_hand':
                             cam[1] *= -1
                             pred_verts_origin[:, 0] *= -1
+                            pred_joints_origin[:,0] *=-1
                             faces = faces[:, ::-1]
                             pred_pose[:, 1::3] *= -1
                             pred_pose[:, 2::3] *= -1
@@ -199,8 +201,10 @@ class HandMocap:
                         cam_trans = cam[1:]
                         vert_smplcoord = pred_verts_origin.copy()
                         
+                        #Compute 3d joints in bbox coordinate
                         vert_bboxcoord = convert_smpl_to_bbox(
                             vert_smplcoord, cam_scale, cam_trans, bAppTransFirst=True) # SMPL space -> bbox space
+                        # pred_output[hand_type]['pred_vertices_bbox'] = vert_bboxcoord       
 
                         hand_boxScale_o2n = pred_output[hand_type]['bbox_scale_ratio']
                         hand_bboxTopLeft = pred_output[hand_type]['bbox_top_left']
@@ -209,6 +213,19 @@ class HandMocap:
                                 vert_bboxcoord, hand_boxScale_o2n, hand_bboxTopLeft, 
                                 img_original.shape[1], img_original.shape[0]) 
                         pred_output[hand_type]['pred_vertices_img'] = vert_imgcoord
+
+
+                        #Compute 3d joints in image coordinate
+                        joints_smplcoord = pred_joints_origin.copy()
+                        joints_bboxcoord = convert_smpl_to_bbox(
+                            joints_smplcoord, cam_scale, cam_trans, bAppTransFirst=True) # SMPL space -> bbox space
+                        # pred_output[hand_type]['pred_joints_bbox'] = joints_bboxcoord
+
+                        joint_imgcoord = convert_bbox_to_oriIm(
+                                joints_bboxcoord, hand_boxScale_o2n, hand_bboxTopLeft, 
+                                img_original.shape[1], img_original.shape[0]) 
+                        pred_output[hand_type]['pred_joints_img'] = joint_imgcoord
+
 
             pred_output_list.append(pred_output)
             hand_bbox_list_processed.append(hand_bboxes_processed)

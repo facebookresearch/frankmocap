@@ -108,7 +108,7 @@ def run_regress(
     else:   #Optimization
         print("Run optimization-based integration")
         integral_output_list = intergration_eft_optimization(body_mocap, openpose_kp_imgcoord, 
-            pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr, body_bbox_list)
+            pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr, body_bbox_list, is_debug_vis=args.is_opt_debug_vis)
     
     return body_bbox_list, hand_bbox_list, integral_output_list
 

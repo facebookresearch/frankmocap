@@ -251,10 +251,8 @@ class Whole_Body_eft():
         loss_pose_3d = self.criterion_keypoints(init_rotmat, pred_rotmat).mean()         #pred_rotmat [N,24,3,3]
         loss_regr_betas_noReject = torch.mean(pred_betas**2)
 
-
         #Standing pose
         loss_straight_legs = self.compute_loss_straight_legs(pred_rotmat)
-
         loss_torso_upright = self.compute_loss_torso_upright(pred_rotmat)
      
         #Add hand keypoint loss
@@ -275,16 +273,17 @@ class Whole_Body_eft():
             pred_vertices_bbox[:,:, :2] = pred_vertices_bbox[:,:, :2] + pred_camera[:,1:].unsqueeze(1)
             pred_vertices_bbox *=112           #112 == 0.5*224
 
-
+            #Save wrist joint to localize 3D hand mesh in the current wrist location
             pred_wrists['r'] = pred_joints_bbox[:,25+6]   #[N,49,3]
             pred_wrists['l'] = pred_joints_bbox[:,25+11]   #[N,49,3]
 
-            #shift size
-            if False:
+            #compute hand mesh loss
+            handMeshVert ={}
+            handMeshVert['l'] = None
+            handMeshVert['r'] = None
+            if True:
                 hadMeshLossAll=torch.tensor(0.0).to(self.device)
-                handMeshVert ={}
                 for lr in ["l", "r"]:
-
                     
                     if f'{lr}hand_joints' not in input_batch or f'{lr}hand_pose' not in input_batch:
                         continue
@@ -303,7 +302,7 @@ class Whole_Body_eft():
 
                     hand_mesh =  input_batch[f'{lr}hand_verts']*scaleFactor       #778,3
                     hand_mesh =  hand_mesh+ deltaWrist
-                    handMeshVert[lr] = hand_mesh.clone().detach().cpu().numpy()       #Save as numpy for debugging
+                    handMeshVert[lr] = {'ver':hand_mesh.clone().detach().cpu().numpy(), 'f':input_batch[f'{lr}hand_faces'], 'color':(50,200,50)}       #Save as numpy for debugging
 
 
                     if False:
@@ -340,18 +339,18 @@ class Whole_Body_eft():
         if True:
             loss = loss + self.keypoint_loss_weight * loss_keypoints_2d * 50
         
-        if True:
+        if True:        ##TODO: if 3D hand is not valid, sometimes this doesn't work well
             loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50
         #         
         
         # loss = loss_pose_3d + \
-        # if bNoHand==False:#g_bUse3DForOptimization:
-        #     loss = loss + hadMeshLossAll*1e-4
+        if bNoHand==False:#g_bUse3DForOptimization:
+            loss = loss + hadMeshLossAll*1e-4
         
-        return loss, pred_output
+        return loss, pred_output, handMeshVert
             
 
-    def vis_eft_step_output(self, input_batch, pred_camera, pred_smpl_output):
+    def vis_eft_step_output(self, input_batch, pred_camera, pred_smpl_output, hand_mesh):
 
         curImgVis = input_batch['img_cropped_rgb'].copy()     #3,224,224
         #Denormalize image
@@ -405,6 +404,13 @@ class Whole_Body_eft():
         glViewer.setWindowSize(curImgVis.shape[1]*4, curImgVis.shape[0]*4)
         glViewer.SetOrthoCamera(True)
 
+
+
+        #add hand mesh 
+        for lr in ['l', 'r']:
+            if hand_mesh[lr] is not None:
+                glViewer.addMeshData([hand_mesh[lr]], bComputeNormal= True)
+
         glViewer.show(0)
 
 
@@ -438,7 +444,7 @@ class Whole_Body_eft():
         #Run prediction
         pred_rotmat, pred_betas, pred_camera = self.model_regressor(images)
 
-        loss, pred_smpl_output = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera)
+        loss, pred_smpl_output, hand_mesh_debug = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera)
         print(f"EFTstep>> loss: {loss}")
 
         # Do backprop
@@ -447,7 +453,7 @@ class Whole_Body_eft():
         self.optimizer.step()
 
         if is_vis:#self.options.bDebug_visEFT:#g_debugVisualize:    #Debug Visualize input
-            self.vis_eft_step_output(input_batch, pred_camera, pred_smpl_output)
+            self.vis_eft_step_output(input_batch, pred_camera, pred_smpl_output, hand_mesh_debug)
 
         return pred_rotmat, pred_betas, pred_camera #, losses
 
