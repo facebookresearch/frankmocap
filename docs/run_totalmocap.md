@@ -35,6 +35,17 @@ Our whole body motion capture is based on our [FrankMocap paper](https://peninci
     ```
 - See below to see how to control in opengl gui mode
 
+
+## Optimization-based Integration mode
+- You need to set ```--integrate_type opt```, and specify open_pose_dir
+-  Run,
+```
+        python -m demo.demo_frankmocap --input_path ./sample_data/single_totalbody.mp4 --out_dir ./mocap_output --integrate_type opt --open_pose_dir (your_open_pose_dir)
+```
+- Current version only works with image dir input. open_pose_dir should have corresponding open pose json files with the names ```(img_name)_keypoint.json```
+- For example, for ```cook_02_01_00001.jpg```, the corresponding name in open_pose_dir should be ```cook_02_01_00001_keypoints.json```.
+
+
 ## Other Details
 - Other options should be the same as [body module](run_bodymocap.md). 
 
