@@ -19,5 +19,4 @@ tqdm
 jinja2
 smplx
 sklearn
-opendr
 chumpy
