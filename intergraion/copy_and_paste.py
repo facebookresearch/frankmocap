@@ -91,7 +91,7 @@ def transfer_rotation(
     return return_value
 
 
-def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape):
+def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape, video_frame):
     integral_output_list = list()
     for i in range(len(pred_body_list)):
         body_info = pred_body_list[i]
@@ -138,7 +138,11 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
             right_hand_pose = right_hand_pose, 
             left_hand_pose= left_hand_pose,
             pose2rot = True)
-
+        import json
+        file_name = '/content/frankmocap/mocap_output/raw_pred'+str(video_frame)+'.json'
+        jdps = json.dumps(str(smplx_output))
+        with open(file_name, 'w') as outfile:
+          json.dump(jdps, outfile)
         pred_vertices = smplx_output.vertices
         pred_vertices = pred_vertices[0].detach().cpu().numpy()
         pred_joints_3d = smplx_output.joints
@@ -150,6 +154,7 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         bbox_scale_ratio = body_info['bbox_scale_ratio']
 
         integral_output = dict()
+        integral_output['pred_joints_smpl'] = pred_joints_3d
         integral_output['pred_vertices_smpl'] = pred_vertices
         integral_output['faces'] = smplx_model.faces
         integral_output['bbox_scale_ratio'] = bbox_scale_ratio
