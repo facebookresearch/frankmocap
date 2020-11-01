@@ -89,6 +89,7 @@ def transfer_rotation(
         return_value = part_rot_aa
     if return_np:
         return_value = return_value.numpy()
+    print("return_value", return_value.device, return_value.dtype)
     return return_value
 
 
@@ -109,7 +110,7 @@ def integration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_sh
         hand_output = dict()
         if hand_info is not None and hand_info['right_hand'] is not None:
             right_hand_pose = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:, 3:]).cuda()
-            right_hand_global_orient = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:,: 3]).cuda()
+            right_hand_global_orient = torch.from_numpy(hand_info['right_hand']['pred_hand_pose'][:,:3]).cuda()
             right_hand_local_orient = transfer_rotation(
                 smplx_model, pred_rotmat, right_hand_global_orient, 21)
             pred_rotmat[0, 21] = right_hand_local_orient

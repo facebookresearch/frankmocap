@@ -140,7 +140,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
                 # Note: current openpose name should be {raw_image_name}_keypoints.json
                 f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
                 openpose_file_path = os.path.join(args.openpose_dir, f_name)
-                assert os.path.exists(openpose_file_path)
+                assert os.path.exists(openpose_file_path), openpose_file_path
                 print(f"Loading openpose data from: {openpose_file_path}")
                 # TODO: this works for single person in the image
                 openpose_imgcoord, _ = demo_utils.read_openpose_wHand(openpose_file_path, dataset='coco')
