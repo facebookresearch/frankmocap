@@ -390,7 +390,7 @@ class Whole_Body_EFT():
 
         # calculate loss
         loss, pred_smpl_output, hand_mesh_debug = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera)
-        print(f"EFTstep>> loss: {loss}")
+        # print(f"EFTstep>> loss: {loss}")
 
         # Do backprop
         self.optimizer.zero_grad()

@@ -22,9 +22,7 @@ class DemoOptions():
         parser.add_argument('--pkl_dir', type=str, help='Path of storing pkl files that store the predicted results')
 
 
-
-
-        #output options
+        # output options
         parser.add_argument('--out_dir', type=str, default=None, help='Folder of output images.')
         parser.add_argument('--save_bbox_output', action='store_true', help='Save the bboxes in json files (bbox_xywh format)')
         parser.add_argument('--save_pred_pkl', action='store_true', help='Save the predictions (bboxes, params, meshes in pkl format')
@@ -32,7 +30,7 @@ class DemoOptions():
         parser.add_argument("--save_frame", action='store_true', help='Save the extracted frames from video input or webcam')
 
 
-        #Other options
+        # Other options
         parser.add_argument('--single_person', action='store_true', help='Reconstruct only one person in the scene with the biggest bbox')
         parser.add_argument('--no_display', action='store_true', help='Do not visualize output on the screen')
         parser.add_argument('--no_video_out', action='store_true', help='Do not merge rendered frames to video (ffmpeg)')
@@ -47,10 +45,6 @@ class DemoOptions():
         parser.add_argument('--post_proc_eft', action="store_true", help="""Apply eft post processing. Only valid for body_mocap""")
         parser.add_argument('--is_opt_debug_vis', action="store_true", help="""Visualize eft optimization iteraction for debugging""")
         
-
-        
-
-
 
         # Body mocap specific options
         parser.add_argument('--use_smplx', action='store_true', help='Use SMPLX model for body mocap')

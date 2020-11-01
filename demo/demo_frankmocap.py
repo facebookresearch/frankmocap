@@ -236,7 +236,6 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
                 args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
         print(f"Processed : {image_path}")
-        sys.exit(0)
 
     # save images as a video
     if not args.no_video_out and input_type in ['image_dir','video', 'webcam']:
