@@ -22,7 +22,7 @@ from datetime import datetime
 
 from bodymocap.body_bbox_detector import BodyPoseEstimator
 from handmocap.hand_bbox_detector import HandBboxDetector
-from intergraion.copy_and_paste import intergration_copy_paste
+from integration.copy_and_paste import integration_copy_paste
 
 from renderer.viewer2D import ImShow
 
@@ -99,8 +99,8 @@ def run_regress(
             img_original_bgr, hand_bbox_list, add_margin=True)
         assert len(hand_bbox_list) == len(pred_hand_list) 
 
-    # intergration by copy-and-paste
-    integral_output_list = intergration_copy_paste(
+    # integration by copy-and-paste
+    integral_output_list = integration_copy_paste(
         pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape)
     
     return body_bbox_list, hand_bbox_list, integral_output_list

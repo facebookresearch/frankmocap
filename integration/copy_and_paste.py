@@ -91,7 +91,7 @@ def transfer_rotation(
     return return_value
 
 
-def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape):
+def integration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape):
     integral_output_list = list()
     for i in range(len(pred_body_list)):
         body_info = pred_body_list[i]
