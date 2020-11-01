@@ -21,8 +21,7 @@ import torch.nn as nn
 import mocap_utils.geometry_utils as gu
 from bodymocap.utils.geometry import weakProjection_gpu
 
-import renderer.glViewer as glViewer
-import renderer.viewer2D as viewer2D
+
 
 class Body_eft():
     """
@@ -350,6 +349,9 @@ class Body_eft():
             
 
     def vis_eft_step_output(self, input_batch, pred_camera, pred_smpl_output):
+
+        import renderer.glViewer as glViewer
+        import renderer.viewer2D as viewer2D
 
         curImgVis = input_batch['img_cropped_rgb'].copy()     #3,224,224
         #Denormalize image

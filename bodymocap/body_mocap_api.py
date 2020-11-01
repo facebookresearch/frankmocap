@@ -14,7 +14,6 @@ from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 import mocap_utils.geometry_utils as gu
 
 from bodymocap.body_eft import Body_eft
-
 from bodymocap.utils.imutils import j2d_normalize, conv_bbox_xywh_to_center_scale
 
 class BodyMocap(object):

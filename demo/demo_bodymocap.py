@@ -41,14 +41,14 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
                 img_original_bgr = None
 
             if args.post_proc_eft:
-                assert args.open_pose_dir is not None
+                assert args.openpose_dir is not None
 
                 #Note: current openpose name should be {raw_image_name}_keypoints.json
                 f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
-                openpose_file_path = os.path.join(args.open_pose_dir,f_name)
+                openpose_file_path = os.path.join(args.openpose_dir,f_name)
                 assert os.path.exists(openpose_file_path)
                 print(f"Loading openpose data from: {openpose_file_path}")
-                openpose_imgcoord, op_people_selected = demo_utils.read_openpose_wHand(openpose_file_path,dataset='coco')      #25, 3       #TODO: this works for single person in the image
+                openpose_imgcoord, _ = demo_utils.read_openpose_wHand(openpose_file_path,dataset='coco')      #25, 3       #TODO: this works for single person in the image
                 assert openpose_imgcoord is not None
 
 

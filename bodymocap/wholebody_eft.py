@@ -3,7 +3,7 @@ import pickle
 import cv2
 import torch
 import numpy as np
-
+import pdb
 # from eft.eftSingleView import EFTFitterHMR, process_image
 # from fairmocap.utils.geometry import weakProjection_gpu
 # from renderer import viewer2D,glViewer
@@ -16,22 +16,23 @@ from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 import copy
 import torch
 import torch.nn as nn
+from torchvision.transforms import Normalize
 
 # from mocap_utils.geometry_utils import rotmat3x3_to_angleaxis
 import mocap_utils.geometry_utils as gu
+import mocap_utils.general_utils as gnu
 from bodymocap.utils.geometry import weakProjection_gpu
 
-import renderer.glViewer as glViewer
-import renderer.viewer2D as viewer2D
 
-class Whole_Body_eft():
+class Whole_Body_EFT():
     """
     This EFT code is for in-the-wild data where no GT is available
     """
 
     def __init__(self, model, smpl):
         #Basic
-        self.smpl_mapping = pickle.load(open("/home/hjoo/codes/handmocap/SMPLX_HAND_INFO.pkl", "rb"))
+        # self.smpl_mapping = pickle.load(open("/home/hjoo/codes/handmocap/SMPLX_HAND_INFO.pkl", "rb"))
+        self.smpl_mapping = gnu.load_pkl("extra_data/hand_module/SMPLX_HAND_INFO.pkl")
         
         self.model_regressor = model
 
@@ -56,7 +57,6 @@ class Whole_Body_eft():
         self.criterion_regr = nn.MSELoss().to(self.device)
 
         #debug
-        from torchvision.transforms import Normalize
         IMG_RES = 224
 
         # Mean and standard deviation for normalizing input image
@@ -90,7 +90,6 @@ class Whole_Body_eft():
         for module in self.model_regressor.modules():
             if type(module)==False:
                 continue
-
             if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
                 # print(module)
                 module.eval()
@@ -137,6 +136,7 @@ class Whole_Body_eft():
         loss = (conf * self.criterion_keypoints(pred_keypoints_2d[:,:25,:], gt_keypoints_2d[:, :, :-1])).mean()
         return loss
 
+
     def keypoint_loss_keypoint21(self, pred_keypoints_2d, gt_keypoints_2d, openpose_weight):
         """ Compute 2D reprojection loss on the keypoints.
         The loss is weighted by the confidence.
@@ -148,61 +148,9 @@ class Whole_Body_eft():
         return loss
 
     
-
-    def keypoint_loss(self, pred_keypoints_2d, gt_keypoints_2d, openpose_weight, gt_weight):
-        """ Compute 2D reprojection loss on the keypoints.
-        The loss is weighted by the confidence.
-        The available keypoints are different for each dataset.
-        """
-        conf = gt_keypoints_2d[:, :, -1].unsqueeze(-1).clone()
-        conf[:, :25] *= openpose_weight
-        conf[:, 25:] *= gt_weight
-        loss = (conf * self.criterion_keypoints(pred_keypoints_2d, gt_keypoints_2d[:, :, :-1])).mean()
-        return loss
-
-    def keypoint_3d_loss(self, pred_keypoints_3d, gt_keypoints_3d, has_pose_3d):
-        """Compute 3D keypoint loss for the examples that 3D keypoint annotations are available.
-        The loss is weighted by the confidence.
-        """
-        pred_keypoints_3d = pred_keypoints_3d[:, 25:, :]
-        conf = gt_keypoints_3d[:, :, -1].unsqueeze(-1).clone()
-        gt_keypoints_3d = gt_keypoints_3d[:, :, :-1].clone()
-        gt_keypoints_3d = gt_keypoints_3d[has_pose_3d == 1]
-        conf = conf[has_pose_3d == 1]
-        pred_keypoints_3d = pred_keypoints_3d[has_pose_3d == 1]
-        if len(gt_keypoints_3d) > 0:
-            gt_pelvis = (gt_keypoints_3d[:, 2,:] + gt_keypoints_3d[:, 3,:]) / 2
-            gt_keypoints_3d = gt_keypoints_3d - gt_pelvis[:, None, :]
-            pred_pelvis = (pred_keypoints_3d[:, 2,:] + pred_keypoints_3d[:, 3,:]) / 2
-            pred_keypoints_3d = pred_keypoints_3d - pred_pelvis[:, None, :]
-            return (conf * self.criterion_keypoints(pred_keypoints_3d, gt_keypoints_3d)).mean()
-        else:
-            return torch.FloatTensor(1).fill_(0.).to(self.device)
-
-    def shape_loss(self, pred_vertices, gt_vertices, has_smpl):
-        """Compute per-vertex loss on the shape for the examples that SMPL annotations are available."""
-        pred_vertices_with_shape = pred_vertices[has_smpl == 1]
-        gt_vertices_with_shape = gt_vertices[has_smpl == 1]
-        if len(gt_vertices_with_shape) > 0:
-            return self.criterion_shape(pred_vertices_with_shape, gt_vertices_with_shape)
-        else:
-            return torch.FloatTensor(1).fill_(0.).to(self.device)
-
-    def smpl_losses(self, pred_rotmat, pred_betas, gt_pose, gt_betas, has_smpl):
-        pred_rotmat_valid = pred_rotmat[has_smpl == 1]
-        gt_rotmat_valid = batch_rodrigues(gt_pose.view(-1,3)).view(-1, 24, 3, 3)[has_smpl == 1]
-        pred_betas_valid = pred_betas[has_smpl == 1]
-        gt_betas_valid = gt_betas[has_smpl == 1]
-        if len(pred_rotmat_valid) > 0:
-            loss_regr_pose = self.criterion_regr(pred_rotmat_valid, gt_rotmat_valid)
-            loss_regr_betas = self.criterion_regr(pred_betas_valid, gt_betas_valid)
-        else:
-            loss_regr_pose = torch.FloatTensor(1).fill_(0.).to(self.device)
-            loss_regr_betas = torch.FloatTensor(1).fill_(0.).to(self.device)
-        return loss_regr_pose, loss_regr_betas
-
     def compute_loss(self, input_batch, pred_rotmat, pred_betas, pred_camera,
                     bNoHand= False, bNoLegs= False):
+
         if bNoHand==False:#g_bUse3DForOptimization:
 
             right_hand_pose = None
@@ -236,38 +184,38 @@ class Whole_Body_eft():
         pred_left_hand_2d = weakProjection_gpu(pred_output.left_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
         
 
-        #Get GT data 
+        # Get GT data 
         gt_keypoints_2d = input_batch['body_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         gt_rhand_2d = input_batch['rhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         gt_lhand_2d = input_batch['lhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         init_rotmat = input_batch['init_rotmat']# 2D keypoints           #[N,49,3]  or [N,25,3]
 
-        loss_keypoints_2d = self.keypoint_loss_openpose25(pred_keypoints_2d, gt_keypoints_2d,1.0)
-                                            #self.options.openpose_train_weight)
+        # TODO, check whether the order of joints is correct
+        loss_keypoints_2d = self.keypoint_loss_openpose25(pred_keypoints_2d, gt_keypoints_2d, 1.0)
 
-        loss_keypoints_2d_hand = self.keypoint_loss_keypoint21(pred_right_hand_2d, gt_rhand_2d,1.0) + self.keypoint_loss_keypoint21(pred_left_hand_2d, gt_lhand_2d,1.0)
-
+        loss_keypoints_2d_hand = \
+            self.keypoint_loss_keypoint21(pred_right_hand_2d, gt_rhand_2d, 1.0) + \
+            self.keypoint_loss_keypoint21(pred_left_hand_2d, gt_lhand_2d,1.0)
 
         loss_pose_3d = self.criterion_keypoints(init_rotmat, pred_rotmat).mean()         #pred_rotmat [N,24,3,3]
         loss_regr_betas_noReject = torch.mean(pred_betas**2)
 
-        #Standing pose
+        # Standing pose
         loss_straight_legs = self.compute_loss_straight_legs(pred_rotmat)
         loss_torso_upright = self.compute_loss_torso_upright(pred_rotmat)
      
-        #Add hand keypoint loss
+        # Add hand keypoint loss
         if True:
             pred_wrists={}
             # camParam_scale = pred_camera[b,0]
             # camParam_trans = pred_camera[b,1:]
             # pred_vert_vis = convert_smpl_to_bbox(pred_vert_vis, camParam_scale, camParam_trans)
 
-            pred_joints_bbox =  pred_joints_3d* pred_camera[:,0]
-            # pred_joints_vis *= pred_camera_vis[b,0]
+            # TODO: Check the order of applying scale and translation
+            pred_joints_bbox =  pred_joints_3d * pred_camera[:,0]
             pred_joints_bbox[:,:, :2] = pred_joints_bbox[:,:, :2] + pred_camera[:,1:].unsqueeze(1)
-            pred_joints_bbox *=112           #112 == 0.5*224
+            pred_joints_bbox *= 112           #112 == 0.5*224
 
-            
             pred_vertices_bbox =  pred_vertices* pred_camera[:,0]
             # pred_joints_vis *= pred_camera_vis[b,0]
             pred_vertices_bbox[:,:, :2] = pred_vertices_bbox[:,:, :2] + pred_camera[:,1:].unsqueeze(1)
@@ -312,8 +260,6 @@ class Whole_Body_eft():
 
                         # hand_mesh_extend = hand_mesh_extend + deltaWrist
 
-
-                        
                         hand_mesh_extend_conf = np.zeros(pred_vertices_bbox.shape, dtype=np.float32)
                         hand_mesh_extend_conf[0,vertId_map,:] = 1.0
                         hand_mesh_extend_conf = torch.from_numpy(hand_mesh_extend_conf).to(self.device)
@@ -351,6 +297,9 @@ class Whole_Body_eft():
             
 
     def vis_eft_step_output(self, input_batch, pred_camera, pred_smpl_output, hand_mesh):
+
+        import renderer.glViewer as glViewer
+        import renderer.viewer2D as viewer2D
 
         curImgVis = input_batch['img_cropped_rgb'].copy()     #3,224,224
         #Denormalize image
@@ -420,16 +369,15 @@ class Whole_Body_eft():
         
         self.model_regressor.train()
         self.exemplerTrainingMode()
-        # self.model_regressor.train()
-        self.exemplerTrainingMode()
+        # self.exemplerTrainingMode()
 
         # input_batch['img_norm'] = input_batch['img_norm'].to(self.device) # input image
         # input_batch['keypoints_2d'] = input_batch['keypoints_2d'].to(self.device) # input image
 
         for _ in range(eftIterNum):
-            pred_rotmat, pred_betas, pred_camera  = self.eftStep(input_batch, is_vis= is_vis)
+            pred_rotmat, pred_betas, pred_camera  = self.eftStep(input_batch, is_vis=is_vis)
 
-        #Reset Model
+        # Reset Model
         self.reloadModel()
 
         return pred_rotmat, pred_betas, pred_camera
@@ -441,9 +389,10 @@ class Whole_Body_eft():
         images = input_batch['img'].to(self.device) # input image
         batch_size = images.shape[0]
 
-        #Run prediction
+        # Run prediction
         pred_rotmat, pred_betas, pred_camera = self.model_regressor(images)
 
+        # calculate loss
         loss, pred_smpl_output, hand_mesh_debug = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera)
         print(f"EFTstep>> loss: {loss}")
 
@@ -452,9 +401,7 @@ class Whole_Body_eft():
         loss.backward()
         self.optimizer.step()
 
-        if is_vis:#self.options.bDebug_visEFT:#g_debugVisualize:    #Debug Visualize input
+        if is_vis:
             self.vis_eft_step_output(input_batch, pred_camera, pred_smpl_output, hand_mesh_debug)
 
-        return pred_rotmat, pred_betas, pred_camera #, losses
-
-       # #For all sample in the current trainingDB
+        return pred_rotmat, pred_betas, pred_camera 
