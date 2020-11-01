@@ -16,7 +16,7 @@ from bodymocap.utils.imutils import j2d_normalize, conv_bbox_xywh_to_center_scal
 from bodymocap.wholebody_eft import Whole_Body_EFT
 
 
-def intergration_eft_optimization(
+def integration_eft_optimization(
     body_module, pred_body_list, pred_hand_list, 
     body_bbox_list, openpose_kp_imgcoord, 
     img_original_bgr, is_debug_vis=False):
@@ -29,7 +29,7 @@ def intergration_eft_optimization(
     image_shape = img_original_bgr.shape
 
     # get eft model
-    eft = Whole_Body_EFT(body_module.model_regressor, body_module.smpl)
+    eft = Whole_Body_EFT(body_module.model_regressor, smplx_model)
 
     # Convert Openpose image process to body bbox space
     bboxInfo = conv_bbox_xywh_to_center_scale(body_bbox_list[0], image_shape)
@@ -101,7 +101,7 @@ def intergration_eft_optimization(
         #Additional data for visualization
         input_batch['img_cropped_rgb'] = body_info['img_cropped'] 
 
-        pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = is_debug_vis)
+        pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum=20, is_vis=is_debug_vis)
 
         #Save output
         body_info['eft_pred_betas'] = pred_rotmat.detach().cpu().numpy()
@@ -124,6 +124,10 @@ def intergration_eft_optimization(
         pred_vertices = pred_vertices[0].detach().cpu().numpy()
         pred_joints_3d = smplx_output.joints
         pred_joints_3d = pred_joints_3d[0].detach().cpu().numpy()   
+        pred_lhand_joints_3d = smplx_output.left_hand_joints
+        pred_lhand_joints_3d = pred_lhand_joints_3d[0].detach().cpu().numpy()
+        pred_rhand_joints_3d = smplx_output.right_hand_joints
+        pred_rhand_joints_3d = pred_rhand_joints_3d[0].detach().cpu().numpy()
 
         # pred_camera
         # camScale = body_info['pred_camera'][0]
@@ -168,6 +172,27 @@ def intergration_eft_optimization(
         pred_vertices_img = convert_bbox_to_oriIm(
             pred_vertices_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
         integral_output['pred_vertices_img'] = pred_vertices_img
+
+        # convert predicted 3D body joints to image space (X, Y are aligned to image)
+        pred_joints_bbox = convert_smpl_to_bbox(
+            pred_joints_3d, camScale, camTrans)
+        pred_joints_img = convert_bbox_to_oriIm(
+            pred_joints_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
+        integral_output['pred_joints_img'] = pred_joints_img
+
+        # convert predicted 3D left hand joints to image space (X, Y are aligned to image)
+        pred_lhand_joints_bbox = convert_smpl_to_bbox(
+            pred_lhand_joints_3d, camScale, camTrans)
+        pred_lhand_joints_img = convert_bbox_to_oriIm(
+            pred_lhand_joints_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
+        integral_output['pred_lhand_joints_img'] = pred_lhand_joints_img
+
+        # convert predicted 3D left hand joints to image space (X, Y are aligned to image)
+        pred_rhand_joints_bbox = convert_smpl_to_bbox(
+            pred_rhand_joints_3d, camScale, camTrans)
+        pred_rhand_joints_img = convert_bbox_to_oriIm(
+            pred_rhand_joints_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
+        integral_output['pred_rhand_joints_img'] = pred_rhand_joints_img
 
         integral_output_list.append(integral_output)
 

@@ -187,8 +187,6 @@ def estimate_translation(S, joints_2d, focal_length=5000., img_size=224.):
     return torch.from_numpy(trans).to(device)
 
 
-
-
 def weakProjection_gpu(skel3D, scale, trans2D ):
     # if len(skel3D.shape)==1:
     #     skel3D = np.reshape(skel3D, (-1,3))
@@ -199,7 +197,6 @@ def weakProjection_gpu(skel3D, scale, trans2D ):
     skel3D_proj = scale* skel3D[:,:,:2] + trans2D
 
     return skel3D_proj#skel3D_proj.view((skel3D.shape[0],-1))       #(N, 19*2) o
-
 
 
 #(57) (1) (2)

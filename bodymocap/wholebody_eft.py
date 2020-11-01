@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 import cv2
 import torch
@@ -151,8 +152,7 @@ class Whole_Body_EFT():
     def compute_loss(self, input_batch, pred_rotmat, pred_betas, pred_camera,
                     bNoHand= False, bNoLegs= False):
 
-        if bNoHand==False:#g_bUse3DForOptimization:
-
+        if not bNoHand:
             right_hand_pose = None
             left_hand_pose = None
             if 'rhand_pose' in input_batch: 
@@ -171,11 +171,13 @@ class Whole_Body_EFT():
                     body_pose=pred_aa[:,3:], 
                     global_orient=pred_aa[:,:3], 
                     pose2rot=True,
-                    right_hand_pose= right_hand_pose, left_hand_pose= left_hand_pose
-                    )
+                    right_hand_pose= right_hand_pose, 
+                    left_hand_pose= left_hand_pose)
+
         else:        #No Hand
             assert False
-            pred_output = self.smpl(betas=pred_betas, body_pose=pred_rotmat[:,1:], global_orient=pred_rotmat[:,[0]], pose2rot=False)
+            pred_output = self.smpl(
+                betas=pred_betas, body_pose=pred_rotmat[:,1:], global_orient=pred_rotmat[:,[0]], pose2rot=False)
 
         pred_vertices = pred_output.vertices
         pred_joints_3d = pred_output.joints
@@ -183,16 +185,16 @@ class Whole_Body_EFT():
         pred_right_hand_2d = weakProjection_gpu(pred_output.right_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
         pred_left_hand_2d = weakProjection_gpu(pred_output.left_hand_joints, pred_camera[:,0], pred_camera[:,1:] )           #N, 49, 2
         
-
         # Get GT data 
         gt_keypoints_2d = input_batch['body_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         gt_rhand_2d = input_batch['rhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         gt_lhand_2d = input_batch['lhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         init_rotmat = input_batch['init_rotmat']# 2D keypoints           #[N,49,3]  or [N,25,3]
 
-        # TODO, check whether the order of joints is correct
+        # body joints
         loss_keypoints_2d = self.keypoint_loss_openpose25(pred_keypoints_2d, gt_keypoints_2d, 1.0)
 
+        # hand joints
         loss_keypoints_2d_hand = \
             self.keypoint_loss_keypoint21(pred_right_hand_2d, gt_rhand_2d, 1.0) + \
             self.keypoint_loss_keypoint21(pred_left_hand_2d, gt_lhand_2d,1.0)
@@ -211,13 +213,11 @@ class Whole_Body_EFT():
             # camParam_trans = pred_camera[b,1:]
             # pred_vert_vis = convert_smpl_to_bbox(pred_vert_vis, camParam_scale, camParam_trans)
 
-            # TODO: Check the order of applying scale and translation
             pred_joints_bbox =  pred_joints_3d * pred_camera[:,0]
             pred_joints_bbox[:,:, :2] = pred_joints_bbox[:,:, :2] + pred_camera[:,1:].unsqueeze(1)
             pred_joints_bbox *= 112           #112 == 0.5*224
 
             pred_vertices_bbox =  pred_vertices* pred_camera[:,0]
-            # pred_joints_vis *= pred_camera_vis[b,0]
             pred_vertices_bbox[:,:, :2] = pred_vertices_bbox[:,:, :2] + pred_camera[:,1:].unsqueeze(1)
             pred_vertices_bbox *=112           #112 == 0.5*224
 
@@ -229,18 +229,17 @@ class Whole_Body_EFT():
             handMeshVert ={}
             handMeshVert['l'] = None
             handMeshVert['r'] = None
+
             if True:
                 hadMeshLossAll=torch.tensor(0.0).to(self.device)
                 for lr in ["l", "r"]:
-                    
                     if f'{lr}hand_joints' not in input_batch or f'{lr}hand_pose' not in input_batch:
                         continue
                     
-                    # camParam_scale = pred_camera_vis[b,0]
-                    scaleFactor = 1.0 #bboxScale_o2n
-                    # input_batch['handData'][f'{lr}_mesh']['ver']         #778,3
-                    hand_wristJoint = input_batch[f'{lr}hand_joints'][[0],:] * scaleFactor             #21,3
-                    deltaWrist = pred_wrists[lr] - hand_wristJoint
+                    # lhand_joints is the joints predicted from hand-moudle 
+                    # already been scaled to body image scale
+                    hand_wristJoint = input_batch[f'{lr}hand_joints'][[0],:] 
+                    deltaWrist = pred_wrists[lr] - hand_wristJoint # from body-module hand to hand-module hand
 
                     #Get Hand mesh
                     if lr =='r':
@@ -248,11 +247,11 @@ class Whole_Body_EFT():
                     else:
                         vertId_map = np.array(self.smpl_mapping['left_hand_verts_idx']) #vertId_map[localId] = SMPLX-ID
 
-                    hand_mesh =  input_batch[f'{lr}hand_verts']*scaleFactor       #778,3
-                    hand_mesh =  hand_mesh+ deltaWrist
-                    handMeshVert[lr] = {'ver':hand_mesh.clone().detach().cpu().numpy(), 'f':input_batch[f'{lr}hand_faces'], 'color':(50,200,50)}       #Save as numpy for debugging
+                    hand_mesh =  input_batch[f'{lr}hand_verts']
+                    hand_mesh =  hand_mesh + deltaWrist # move hand-moudle prediction to body module prediction
+                    handMeshVert[lr] = {'ver':hand_mesh.clone().detach().cpu().numpy(), 'f':input_batch[f'{lr}hand_faces'], 'color':(50,200,50)} 
 
-
+                    '''
                     if False:
                         hand_mesh_extend = torch.from_numpy(np.zeros(pred_vertices_bbox.shape, dtype=np.float32)).to(self.device)
                         hand_mesh_extend[0,vertId_map,:] = hand_mesh
@@ -267,32 +266,29 @@ class Whole_Body_EFT():
                         handMeshloss = (hand_mesh_extend_conf*self.criterion_keypoints(pred_vertices_bbox, hand_mesh_extend)).mean() * (10475/ 778)
                     else:
                         handMeshloss = self.criterion_keypoints(pred_vertices_bbox[0,vertId_map,:], hand_mesh).mean() * (10475/ 778)
-
+                    '''
+                    handMeshloss = self.criterion_keypoints(pred_vertices_bbox[0,vertId_map,:], hand_mesh).mean() * (10475/ 778)
                     hadMeshLossAll += handMeshloss * 10
         
-        ############# Define losses  #############
-        #Default: prior loss
+        # camera prior
         loss = ((torch.exp(-pred_camera[:,0]*10)) ** 2 ).mean() +  self.beta_loss_weight * loss_regr_betas_noReject
 
-        #Torso orientation
-        if bNoLegs:
-            if True:
-                loss = loss + loss_torso_upright
-            #No knee motion
-            if True:
-                loss = loss + loss_straight_legs
+        # 2D body keypoints 
+        loss = loss + self.keypoint_loss_weight * loss_keypoints_2d * 50
 
-        if True:
-            loss = loss + self.keypoint_loss_weight * loss_keypoints_2d * 50
-        
-        if True:        ##TODO: if 3D hand is not valid, sometimes this doesn't work well
-            loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50
-        #         
-        
-        # loss = loss_pose_3d + \
-        if bNoHand==False:#g_bUse3DForOptimization:
+        # 2D hand keypoints
+        # TODO: if 3D hand is not valid, sometimes this doesn't work well
+        loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50
+
+        # 3D Hand mesh loss
+        if not bNoHand:
             loss = loss + hadMeshLossAll*1e-4
-        
+
+        # Force the torso orientation and legs
+        if bNoLegs:
+            loss = loss + loss_torso_upright
+            loss = loss + loss_straight_legs
+
         return loss, pred_output, handMeshVert
             
 

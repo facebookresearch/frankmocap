@@ -26,7 +26,6 @@ class DemoOptions():
 
         #output options
         parser.add_argument('--out_dir', type=str, default=None, help='Folder of output images.')
-        # parser.add_argument('--pklout', action='store_true', help='Export mocap output as pkl file')
         parser.add_argument('--save_bbox_output', action='store_true', help='Save the bboxes in json files (bbox_xywh format)')
         parser.add_argument('--save_pred_pkl', action='store_true', help='Save the predictions (bboxes, params, meshes in pkl format')
         parser.add_argument("--save_mesh", action='store_true', help="Save the predicted vertices and faces")
@@ -69,6 +68,7 @@ class DemoOptions():
         # renderer
         parser.add_argument("--renderer_type", type=str, default="opengl", 
             choices=['pytorch3d', 'opendr', 'opengl_gui', 'opengl'], help="type of renderer to use")
+        
 
         self.parser = parser
     

@@ -22,8 +22,8 @@ from mocap_utils.timer import Timer
 from datetime import datetime
 from bodymocap.body_bbox_detector import BodyPoseEstimator
 from handmocap.hand_bbox_detector import HandBboxDetector
-from intergration.copy_and_paste import intergration_copy_paste
-from intergration.eft import intergration_eft_optimization
+from integration.copy_and_paste import integration_copy_paste
+from integration.eft import integration_eft_optimization
 
 
 def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
@@ -99,15 +99,15 @@ def run_regress(
             img_original_bgr, hand_bbox_list, add_margin=True)
         assert len(hand_bbox_list) == len(pred_hand_list) 
 
-    # intergration by copy-and-paste
+    # integration by copy-and-paste
     if args.integrate_type=='copy_paste':
         print("Run copy-paste integration")
-        integral_output_list = intergration_copy_paste(
+        integral_output_list = integration_copy_paste(
             pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape)
     # Optimization
     else:   
         print("Run optimization-based integration")
-        integral_output_list = intergration_eft_optimization(
+        integral_output_list = integration_eft_optimization(
             body_mocap, pred_body_list, pred_hand_list, 
             body_bbox_list, openpose_kp_imgcoord, 
             img_original_bgr, is_debug_vis=args.is_opt_debug_vis)
@@ -236,6 +236,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
                 args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
         print(f"Processed : {image_path}")
+        sys.exit(0)
 
     # save images as a video
     if not args.no_video_out and input_type in ['image_dir','video', 'webcam']:
@@ -244,6 +245,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
     if input_type =='webcam' and input_data is not None:
         input_data.release()
     cv2.destroyAllWindows()
+
 
 def main():
     args = DemoOptions().parse()

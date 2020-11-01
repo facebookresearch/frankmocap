@@ -78,7 +78,7 @@ class SMPLX(_SMPLX):
         # extra_joints = vertices2joints(self.J_regressor_extra, smpl_output.vertices[:,:6890])   *0      #TODO: implement this correctly
 
 
-        #SMPL-X Joint order: https://docs.google.com/spreadsheets/d/1_1dLdaX-sbMkCKr_JzJW_RZCpwBwd7rcKkWT_VgAQ_0/edit#gid=0
+        # SMPL-X Joint order: https://docs.google.com/spreadsheets/d/1_1dLdaX-sbMkCKr_JzJW_RZCpwBwd7rcKkWT_VgAQ_0/edit#gid=0
         smplx_to_smpl = list(range(0,22)) + [28,43] + list(range(55,76))        #28 left middle finger , 43: right middle finger 1
         smpl_joints = smpl_output.joints[:,smplx_to_smpl,:]       #Convert SMPL-X to SMPL     127 ->45
         joints = torch.cat([smpl_joints, extra_joints], dim=1)               #[N, 127, 3]->[N, 45, 3]  + [N, 9, 3]        #SMPL-X has more joints. should convert 45
@@ -106,6 +106,7 @@ class SMPLX(_SMPLX):
         return output
 
 
+# SMPL-X Joints
 """
 0	pelvis',
 1	left_hip',
