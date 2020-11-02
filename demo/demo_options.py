@@ -59,6 +59,9 @@ class DemoOptions():
         # Whole motion capture (FrankMocap) specific options
         parser.add_argument('--frankmocap_fast_mode', action='store_true', help="Use fast hand detection mode for whole body motion capture (frankmocap)")
 
+        # use openpose bbox for detection
+        parser.add_argument('--use_openpose_bbox', action='store_true', help="Use hand bounding bbox obtained from openpose")
+
         # renderer
         parser.add_argument("--renderer_type", type=str, default="opengl", 
             choices=['pytorch3d', 'opendr', 'opengl_gui', 'opengl'], help="type of renderer to use")

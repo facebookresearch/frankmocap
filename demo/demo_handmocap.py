@@ -13,7 +13,7 @@ import mocap_utils.general_utils as gnu
 import mocap_utils.demo_utils as demo_utils
 
 from handmocap.hand_mocap_api import HandMocap
-from handmocap.hand_bbox_detector import HandBboxDetector
+from handmocap.hand_bbox_detector import HandBboxDetector, Openpose_Hand_Detector
 
 from renderer.viewer2D import ImShow
 import time
@@ -30,13 +30,20 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
     while True:
         # load data
         load_bbox = False
+        openpose_file_path = ''
 
         if input_type =='image_dir':
             if cur_frame < len(input_data):
                 image_path = input_data[cur_frame]
                 img_original_bgr  = cv2.imread(image_path)
+                # load openpose bbox
+                if args.use_openpose_bbox:
+                    f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
+                    openpose_file_path = os.path.join(args.openpose_dir, f_name)
+                    assert os.path.exists(openpose_file_path), openpose_file_path
             else:
                 img_original_bgr = None
+                openpose_file_path = ''
 
         elif input_type == 'bbox_dir':
             if cur_frame < len(input_data):
@@ -99,6 +106,17 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
             assert args.crop_type == 'no_crop'
             detect_output = bbox_detector.detect_hand_bbox(img_original_bgr.copy())
             body_pose_list, body_bbox_list, hand_bbox_list, raw_hand_bboxes = detect_output
+            # use openpose bbox
+            if args.use_openpose_bbox:
+                assert openpose_file_path != '' and osp.exists(openpose_file_path)
+                op_hand_bbox_list = Openpose_Hand_Detector.detect_hand_bbox(openpose_file_path, img_original_bgr)
+                res_hand_bbox_list = [dict(left_hand = None, right_hand=None),]
+                for hand_type in ['left_hand', 'right_hand']:
+                    if op_hand_bbox_list[0][hand_type] is None and hand_bbox_list[0][hand_type] is not None:
+                        res_hand_bbox_list[0][hand_type] = hand_bbox_list[0][hand_type]
+                    else:
+                        res_hand_bbox_list[0][hand_type] = op_hand_bbox_list[0][hand_type]
+                hand_bbox_list = res_hand_bbox_list
         
         # save the obtained body & hand bbox to json file
         if args.save_bbox_output:

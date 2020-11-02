@@ -10,6 +10,7 @@ import cv2
 
 import torch
 import torchvision.transforms as transforms
+import mocap_utils.general_utils as gnu
 # from PIL import Image
 
 from bodymocap.body_bbox_detector import BodyPoseEstimator
@@ -34,6 +35,46 @@ from detectors.hand_object_detector.lib.model.roi_layers import nms # might rais
 from detectors.hand_object_detector.lib.model.rpn.bbox_transform import bbox_transform_inv
 from detectors.hand_object_detector.lib.model.utils.blob import im_list_to_blob
 from detectors.hand_object_detector.lib.model.faster_rcnn.resnet import resnet as detector_resnet 
+
+
+class Openpose_Hand_Detector(object):
+    """
+    API for obtain hand bbox from openpose file
+    """
+    @classmethod
+    def __bbox_from_keypoints(cls, keypoints, img):
+        score = keypoints[:, 2]
+        valid_kps = keypoints[score>0.0, :2]
+        x0 = np.min(valid_kps[:, 0])
+        y0 = np.min(valid_kps[:, 1])
+        x1 = np.max(valid_kps[:, 0])
+        y1 = np.max(valid_kps[:, 1])
+        return np.array([x0, y0, x1-x0, y1-y0])
+
+    @classmethod
+    def detect_hand_bbox(cls, openpose_file, img_original_bgr):
+        # read openpose prediction
+        json_data = gnu.load_json(openpose_file)
+        assert len(json_data['people'])==1, f"Openpose bbox only support one person for now"
+        people_data = json_data['people'][0]
+
+        # obtain wrist location
+        body_keypoints = people_data['pose_keypoints_2d']
+        wrist_keypoints = dict(
+            left_wrist = body_keypoints[7*3:8:3],
+            right_wrist = body_keypoints[4*3:5:3],
+        )
+
+        # get bbox
+        hand_bbox_list = [dict(left_hand = None, right_hand = None)]
+        for hand_type in ['left', 'right']:
+            hand_keypoints = people_data[f'hand_{hand_type}_keypoints_2d'] 
+            if len(hand_keypoints) == 0: continue
+            hand_keypoints += wrist_keypoints[f'{hand_type}_wrist']
+            hand_keypoints = np.array(hand_keypoints).reshape(-1, 3)
+            bbox = cls.__bbox_from_keypoints(hand_keypoints, img_original_bgr)
+            hand_bbox_list[0][f'{hand_type}_hand'] = bbox
+        return hand_bbox_list
 
 
 class Third_View_Detector(BodyPoseEstimator):
