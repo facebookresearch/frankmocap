@@ -89,7 +89,6 @@ def transfer_rotation(
         return_value = part_rot_aa
     if return_np:
         return_value = return_value.numpy()
-    print("return_value", return_value.device, return_value.dtype)
     return return_value
 
 

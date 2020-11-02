@@ -44,12 +44,15 @@ class Openpose_Hand_Detector(object):
     @classmethod
     def __bbox_from_keypoints(cls, keypoints, img):
         score = keypoints[:, 2]
-        valid_kps = keypoints[score>0.0, :2]
-        x0 = np.min(valid_kps[:, 0])
-        y0 = np.min(valid_kps[:, 1])
-        x1 = np.max(valid_kps[:, 0])
-        y1 = np.max(valid_kps[:, 1])
-        return np.array([x0, y0, x1-x0, y1-y0])
+        if np.sum(score>0.0)>1:
+            valid_kps = keypoints[score>0.0, :2]
+            x0 = np.min(valid_kps[:, 0])
+            y0 = np.min(valid_kps[:, 1])
+            x1 = np.max(valid_kps[:, 0])
+            y1 = np.max(valid_kps[:, 1])
+            return np.array([x0, y0, x1-x0, y1-y0])
+        else:
+            return None
 
     @classmethod
     def detect_hand_bbox(cls, openpose_file, img_original_bgr):

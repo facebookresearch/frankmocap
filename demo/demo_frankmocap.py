@@ -21,7 +21,7 @@ import mocap_utils.general_utils as gnu
 from mocap_utils.timer import Timer
 from datetime import datetime
 from bodymocap.body_bbox_detector import BodyPoseEstimator
-from handmocap.hand_bbox_detector import HandBboxDetector
+from handmocap.hand_bbox_detector import HandBboxDetector, Openpose_Hand_Detector
 from integration.copy_and_paste import integration_copy_paste
 from integration.eft import integration_eft_optimization
 
@@ -44,6 +44,7 @@ def run_regress(
     args, img_original_bgr, 
     body_bbox_list, hand_bbox_list, bbox_detector,
     body_mocap, hand_mocap,
+    openpose_file_path,
     openpose_kp_imgcoord = None,  # Required for optimization-based integration
 ):
     cond1 = len(body_bbox_list) > 0 and len(hand_bbox_list) > 0
@@ -51,10 +52,11 @@ def run_regress(
 
     # use pre-computed bbox or use slow detection mode
     if cond1 or cond2:
-        if not cond1 and cond2:
+        if (not cond1) and cond2:
             # run detection only when bbox is not available
             body_pose_list, body_bbox_list, hand_bbox_list, _ = \
                 bbox_detector.detect_hand_bbox(img_original_bgr.copy())
+            # use openpose bbox
         else:
             print("Use pre-computed bounding boxes")
         assert len(body_bbox_list) == len(hand_bbox_list)
@@ -66,6 +68,19 @@ def run_regress(
         # only keep on bbox if args.single_person is set
         body_bbox_list, hand_bbox_list = __filter_bbox_list(
             body_bbox_list, hand_bbox_list, args.single_person)
+
+        if args.use_openpose_bbox:
+            assert openpose_file_path != '' and osp.exists(openpose_file_path)
+            assert cond2, "Do not use openpose prediction in fm fast mode."
+            assert args.single_person
+            op_hand_bbox_list = Openpose_Hand_Detector.detect_hand_bbox(openpose_file_path, img_original_bgr)
+            res_hand_bbox_list = [dict(left_hand = None, right_hand=None),]
+            for hand_type in ['left_hand', 'right_hand']:
+                if op_hand_bbox_list[0][hand_type] is None and hand_bbox_list[0][hand_type] is not None:
+                    res_hand_bbox_list[0][hand_type] = hand_bbox_list[0][hand_type]
+                else:
+                    res_hand_bbox_list[0][hand_type] = op_hand_bbox_list[0][hand_type]
+            hand_bbox_list = res_hand_bbox_list
 
         # hand & body pose regression
         pred_hand_list = hand_mocap.regress(
@@ -124,8 +139,9 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
     while True:
         # load data
         load_bbox = False
-
+        openpose_file_path = ''
         openpose_imgcoord = None
+
         if input_type =='image_dir':
             if cur_frame < len(input_data):
                 image_path = input_data[cur_frame]
@@ -133,14 +149,14 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             else:
                 img_original_bgr = None
 
-            # Optimization based integration. This requires openpose prediction
-            if args.integrate_type=='opt':
-                assert args.openpose_dir is not None
-
+            if args.use_openpose_bbox or args.integrate_type == 'opt':
                 # Note: current openpose name should be {raw_image_name}_keypoints.json
                 f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
                 openpose_file_path = os.path.join(args.openpose_dir, f_name)
                 assert os.path.exists(openpose_file_path), openpose_file_path
+
+            # Optimization based integration. This requires openpose prediction
+            if args.integrate_type=='opt':
                 print(f"Loading openpose data from: {openpose_file_path}")
                 # TODO: this works for single person in the image
                 openpose_imgcoord, _ = demo_utils.read_openpose_wHand(openpose_file_path, dataset='coco')
@@ -200,7 +216,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             args, img_original_bgr, 
             body_bbox_list, hand_bbox_list, bbox_detector,
             body_mocap, hand_mocap,
-            openpose_imgcoord)    
+            openpose_file_path, openpose_imgcoord)    
 
         # save the obtained body & hand bbox to json file
         if args.save_bbox_output: 
