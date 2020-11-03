@@ -87,12 +87,12 @@ def generate_json_structure():
           "leftHip": {
               "x": [],
               "y": [],
-              "score": []
+              "z": []
           },
           "rightHip": {
               "x": [],
               "y": [],
-              "score": []
+              "z": []
           },
           "leftKnee": {
               "x": [],
@@ -352,9 +352,9 @@ def fill_body_joints(output_json,pred_output_list):
     ['rightAnkle',11]
     ]
     for pair in correspondence:
-      output_json['posenet'][pair[0]]['x'].append(pred_output_list[0]['pred_joints_smpl'][pair[1]][0])
-      output_json['posenet'][pair[0]]['y'].append(pred_output_list[0]['pred_joints_smpl'][pair[1]][1])
-      output_json['posenet'][pair[0]]['z'].append(pred_output_list[0]['pred_joints_smpl'][pair[1]][2])
+      output_json['posenet'][pair[0]]['x'].append(pred_output_list[0][0]['pred_joints_smpl'][pair[1]][0])
+      output_json['posenet'][pair[0]]['y'].append(pred_output_list[0][0]['pred_joints_smpl'][pair[1]][1])
+      output_json['posenet'][pair[0]]['z'].append(pred_output_list[0][0]['pred_joints_smpl'][pair[1]][2])
     return output_json
 
 def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
@@ -431,7 +431,7 @@ def run_regress(
 
     # intergration by copy-and-paste
     integral_output_list = intergration_copy_paste(
-        pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape, video_frame)
+        pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape, output_json)
     
     return body_bbox_list, hand_bbox_list, integral_output_list
 
@@ -439,7 +439,6 @@ def run_regress(
 def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
     #Setup input data to handle different types of inputs
     input_type, input_data = demo_utils.setup_input(args)
-
     cur_frame = args.start_frame
     video_frame = 0
 
@@ -514,10 +513,10 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
 
         #Associando com nosso Json
         output_json = fill_body_joints(output_json,pred_output_list)
-
-
-    cv2.destroyAllWindows()
-
+        #salvando nosso output em arquivo
+    json_name = str(args.input_path)[0:-4] + '.json'
+    with open(json_name, 'w') as outfile:
+        json.dump(str(output_json), outfile)
 def main():
     args = DemoOptions().parse()
     args.use_smplx = True
@@ -539,6 +538,7 @@ def main():
     visualizer = Visualizer(args.renderer_type)
 
     run_frank_mocap(args, hand_bbox_detector, body_mocap, hand_mocap, visualizer)
+  
 
 
 if __name__ == '__main__':
