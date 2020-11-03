@@ -26,6 +26,336 @@ from intergraion.copy_and_paste import intergration_copy_paste
 
 from renderer.viewer2D import ImShow
 
+def generate_json_structure():
+    output_json = {
+      "posenet": {
+          "nose": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftEye": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightEye": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftEar": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightEar": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftShoulder": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightShoulder": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftElbow": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightElbow": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftWrist": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightWrist": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftHip": {
+              "x": [],
+              "y": [],
+              "score": []
+          },
+          "rightHip": {
+              "x": [],
+              "y": [],
+              "score": []
+          },
+          "leftKnee": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightKnee": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "leftAnkle": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "rightAnkle": {
+              "x": [],
+              "y": [],
+              "z": []
+          }
+      },
+      "leftHand": {
+          "hand": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          }
+      },
+      "rigthHand": {
+          "hand": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "thumb_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "index_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "middle_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "ring_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_root": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_base": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_mid": {
+              "x": [],
+              "y": [],
+              "z": []
+          },
+          "pinky_tip": {
+              "x": [],
+              "y": [],
+              "z": []
+          }
+      }
+    }
+    return output_json
+
+def fill_body_joints(output_json,pred_output_list):
+    correspondence =[['nose',0],
+    ['leftEye',16],
+    ['rightEye',15],
+    ['leftEar',18],
+    ['rightEar',17],
+    ['leftShoulder',5],
+    ['rightShoulder',2],
+    ['leftElbow',6],
+    ['rightElbow',3],
+    ['leftWrist',7],
+    ['rightWrist',4],
+    ['leftHip',12],
+    ['rightHip',9],
+    ['leftKnee',13],
+    ['rightKnee',10],
+    ['leftAnkle',14],
+    ['rightAnkle',11]
+    ]
+    for pair in correspondence:
+      output_json['posenet'][pair[0]]['x'].append(pred_output_list[0]['pred_joints_smpl'][pair[1]][0])
+      output_json['posenet'][pair[0]]['y'].append(pred_output_list[0]['pred_joints_smpl'][pair[1]][1])
+      output_json['posenet'][pair[0]]['z'].append(pred_output_list[0]['pred_joints_smpl'][pair[1]][2])
+    return output_json
 
 def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
     # (to make the order as consistent as possible without tracking)
@@ -44,7 +374,7 @@ def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
 def run_regress(
     args, img_original_bgr, 
     body_bbox_list, hand_bbox_list, bbox_detector,
-    body_mocap, hand_mocap,video_frame
+    body_mocap, hand_mocap,output_json
 ):
     cond1 = len(body_bbox_list) > 0 and len(hand_bbox_list) > 0
     cond2 = not args.frankmocap_fast_mode
@@ -112,6 +442,11 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
 
     cur_frame = args.start_frame
     video_frame = 0
+
+    #Nossa estrutura de saida
+    output_json = generate_json_structure()
+
+
     while True:
         # load data
         load_bbox = False
@@ -175,12 +510,12 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         body_bbox_list, hand_bbox_list, pred_output_list = run_regress(
             args, img_original_bgr, 
             body_bbox_list, hand_bbox_list, bbox_detector,
-            body_mocap, hand_mocap, video_frame)
-        import json
-        file_name = '/content/frankmocap/mocap_output/final_pred'+str(video_frame)+'.json'
-        jdps = json.dumps(str(pred_output_list))
-        with open(file_name, 'w') as outfile:
-          json.dump(jdps, outfile)
+            body_mocap, hand_mocap, output_json)
+
+        #Associando com nosso Json
+        output_json = fill_body_joints(output_json,pred_output_list)
+
+
     cv2.destroyAllWindows()
 
 def main():
