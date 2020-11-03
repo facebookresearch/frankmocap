@@ -8,6 +8,38 @@ import mocap_utils.geometry_utils as gu
 from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 
 
+def fill_hand_joints(output_json,pred_rhand_joints_3d,pred_lhand_joints_3d):
+    correspondence =[["hand",0],
+        ["thumb_root",1],
+        ["thumb_base",2],
+        ["thumb_mid",3],
+        ["thumb_tip",4],
+        ["index_root",5],
+        ["index_base",6],
+        ["index_mid",7],
+        ["index_tip",8],
+        ["middle_root",9],
+        ["middle_base",10],
+        ["middle_mid",11],
+        ["middle_tip",12],
+        ["ring_root",13],
+        ["ring_base",14],
+        ["ring_mid",15],
+        ["ring_tip",16],
+        ["pinky_root",17],
+        ["pinky_base",18],
+        ["pinky_mid",19],
+        ["pinky_tip",20]
+    ]
+    for pair in correspondence:
+      output_json['rigthHand'][pair[0]]['x'].append(pred_rhand_joints_3d[0][pair[1]][0])
+      output_json['rigthHand'][pair[0]]['y'].append(pred_rhand_joints_3d[0][pair[1]][1])
+      output_json['rigthHand'][pair[0]]['z'].append(pred_rhand_joints_3d[0][pair[1]][2])
+      output_json['leftHand'][pair[0]]['x'].append(pred_lhand_joints_3d[0][pair[1]][0])
+      output_json['leftHand'][pair[0]]['y'].append(pred_lhand_joints_3d[0][pair[1]][1])
+      output_json['leftHand'][pair[0]]['z'].append(pred_lhand_joints_3d[0][pair[1]][2])
+    return output_json
+
 def get_kinematic_map(smplx_model, dst_idx):
     cur = dst_idx
     kine_map = dict()
@@ -91,7 +123,7 @@ def transfer_rotation(
     return return_value
 
 
-def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape, video_frame):
+def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_shape, output_json):
     integral_output_list = list()
     for i in range(len(pred_body_list)):
         body_info = pred_body_list[i]
@@ -138,15 +170,18 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
             right_hand_pose = right_hand_pose, 
             left_hand_pose= left_hand_pose,
             pose2rot = True)
-        import json
-        file_name = '/content/frankmocap/mocap_output/raw_pred'+str(video_frame)+'.json'
-        jdps = json.dumps(str(smplx_output))
-        with open(file_name, 'w') as outfile:
-          json.dump(jdps, outfile)
+
         pred_vertices = smplx_output.vertices
         pred_vertices = pred_vertices[0].detach().cpu().numpy()
         pred_joints_3d = smplx_output.joints
         pred_joints_3d = pred_joints_3d[0].detach().cpu().numpy()   
+        pred_rhand_joints_3d = smplx_output.right_hand_joints
+        pred_rhand_joints_3d = pred_rhand_joints_3d[0].detach().cpu().numpy()
+        pred_lhand_joints_3d = smplx_output.left_hand_joints
+        pred_lhand_joints_3d = pred_lhand_joints_3d[0].detach().cpu().numpy()
+
+        #associando as juntas das maos ao output_json
+        output_json = fill_hand_joints(output_json,pred_rhand_joints_3d,pred_lhand_joints_3d)
 
         camScale = body_info['pred_camera'][0]
         camTrans = body_info['pred_camera'][1:]
@@ -248,4 +283,4 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
 
         integral_output_list.append(integral_output)
 
-    return integral_output_list
+    return integral_output_list, output_json
