@@ -93,6 +93,7 @@ def integration_eft_optimization(
             input_batch['lhand_pose'] = None # torch.from_numpy(np.zeros((1,45), dtype= np.float32)).cuda()
 
         # run eft 
+        input_batch['img_cropped_rgb'] = body_info['img_cropped'] 
         pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum=20, is_vis=is_debug_vis)
 
         # Save output
