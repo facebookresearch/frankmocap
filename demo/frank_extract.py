@@ -333,28 +333,28 @@ def generate_json_structure():
     return output_json
 
 def fill_body_joints(output_json,pred_output_list):
-    correspondence =[['nose',0],
-    ['leftEye',16],
-    ['rightEye',15],
-    ['leftEar',18],
-    ['rightEar',17],
-    ['leftShoulder',5],
-    ['rightShoulder',2],
-    ['leftElbow',6],
-    ['rightElbow',3],
-    ['leftWrist',7],
-    ['rightWrist',4],
-    ['leftHip',12],
-    ['rightHip',9],
-    ['leftKnee',13],
-    ['rightKnee',10],
-    ['leftAnkle',14],
-    ['rightAnkle',11]
+    correspondence =[["nose",0],
+    ["leftEye",16],
+    ["rightEye",15],
+    ["leftEar",18],
+    ["rightEar",17],
+    ["leftShoulder",5],
+    ["rightShoulder",2],
+    ["leftElbow",6],
+    ["rightElbow",3],
+    ["leftWrist",7],
+    ["rightWrist",4],
+    ["leftHip",12],
+    ["rightHip",9],
+    ["leftKnee",13],
+    ["rightKnee",10],
+    ["leftAnkle",14],
+    ["rightAnkle",11]
     ]
     for pair in correspondence:
-      output_json['posenet'][pair[0]]['x'].append(pred_output_list[0][0]['pred_joints_smpl'][pair[1]][0])
-      output_json['posenet'][pair[0]]['y'].append(pred_output_list[0][0]['pred_joints_smpl'][pair[1]][1])
-      output_json['posenet'][pair[0]]['z'].append(pred_output_list[0][0]['pred_joints_smpl'][pair[1]][2])
+      output_json["posenet"][pair[0]]["x"].append(pred_output_list[0][0]["pred_joints_smpl"][pair[1]][0])
+      output_json["posenet"][pair[0]]["y"].append(pred_output_list[0][0]["pred_joints_smpl"][pair[1]][1])
+      output_json["posenet"][pair[0]]["z"].append(pred_output_list[0][0]["pred_joints_smpl"][pair[1]][2])
     return output_json
 
 def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
@@ -450,24 +450,24 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         # load data
         load_bbox = False
 
-        if input_type =='image_dir':
+        if input_type =="image_dir":
             if cur_frame < len(input_data):
                 image_path = input_data[cur_frame]
                 img_original_bgr  = cv2.imread(image_path)
             else:
                 img_original_bgr = None
 
-        elif input_type == 'bbox_dir':
+        elif input_type == "bbox_dir":
             if cur_frame < len(input_data):
-                image_path = input_data[cur_frame]['image_path']
-                hand_bbox_list = input_data[cur_frame]['hand_bbox_list']
-                body_bbox_list = input_data[cur_frame]['body_bbox_list']
+                image_path = input_data[cur_frame]["image_path"]
+                hand_bbox_list = input_data[cur_frame]["hand_bbox_list"]
+                body_bbox_list = input_data[cur_frame]["body_bbox_list"]
                 img_original_bgr  = cv2.imread(image_path)
                 load_bbox = True
             else:
                 img_original_bgr = None
 
-        elif input_type == 'video':      
+        elif input_type == "video":      
             _, img_original_bgr = input_data.read()
             if video_frame < cur_frame:
                 video_frame += 1
@@ -480,7 +480,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
                     gnu.make_subdir(image_path)
                     cv2.imwrite(image_path, img_original_bgr)
         
-        elif input_type == 'webcam':
+        elif input_type == "webcam":
             _, img_original_bgr = input_data.read()
 
             if video_frame < cur_frame:
@@ -514,24 +514,24 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         #Associando com nosso Json
         output_json = fill_body_joints(output_json,pred_output_list)
         #salvando nosso output em arquivo
-    json_name = str(args.input_path)[0:-4] + '.json'
-    with open(json_name, 'w') as outfile:
+    json_name = str(args.input_path)[0:-4] + ".json"
+    with open(json_name, "w") as outfile:
         json.dump(str(output_json), outfile)
 def main():
     args = DemoOptions().parse()
     args.use_smplx = True
 
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     assert torch.cuda.is_available(), "Current version only supports GPU"
 
-    hand_bbox_detector =  HandBboxDetector('third_view', device)
+    hand_bbox_detector =  HandBboxDetector("third_view", device)
     
     #Set Mocap regressor
     body_mocap = BodyMocap(args.checkpoint_body_smplx, args.smpl_dir, device = device, use_smplx= True)
     hand_mocap = HandMocap(args.checkpoint_hand, args.smpl_dir, device = device)
 
     # Set Visualizer
-    if args.renderer_type in ['pytorch3d', 'opendr']:
+    if args.renderer_type in ["pytorch3d", "opendr"]:
         from renderer.screen_free_visualizer import Visualizer
     else:
         from renderer.visualizer import Visualizer
@@ -541,5 +541,5 @@ def main():
   
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
