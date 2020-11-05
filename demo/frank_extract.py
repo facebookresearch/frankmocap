@@ -516,7 +516,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         #salvando nosso output em arquivo
     json_name = str(args.input_path)[0:-4] + ".json"
     with open(json_name, "w") as outfile:
-        json.dump(str(output_json), outfile)
+        json.dump(output_json, outfile)
 def main():
     args = DemoOptions().parse()
     args.use_smplx = True
