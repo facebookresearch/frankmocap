@@ -358,14 +358,14 @@ def fill_body_joints(output_json,pred_output_list):
     return output_json
 
 def scale_joints(output_json,scale):
-    size = len(data_dict['posenet']['nose']['x']
+    size = len(output_json['posenet']['nose']['x'])
     for key in output_json.keys():
         for little_key in output_json[key].keys():
           for i in range(size):
             output_json[key][little_key]['x'][i] = (output_json[key][little_key]['x'][i] + 1.0)*scale[0]
             output_json[key][little_key]['y'][i] = (output_json[key][little_key]['y'][i] + 1.0)*scale[1]
             output_json[key][little_key]['z'][i] = (output_json[key][little_key]['z'][i] + 1.0)*scale[2]
-
+    return output_json
 def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
     # (to make the order as consistent as possible without tracking)
     bbox_size =  [ (x[2] * x[3]) for x in body_bbox_list]
@@ -533,7 +533,8 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         #Associando com nosso Json
         output_json = fill_body_joints(output_json,pred_output_list)
         #salvando nosso output em arquivo
-    output_json = scale_joints(output_json,scale)
+    if(args.scale):
+        output_json = scale_joints(output_json,scale)
     json_name = str(args.input_path)[0:-4] + ".json"
     with open(json_name, "w") as outfile:
         output_json = str(output_json).replace("'",'"')
