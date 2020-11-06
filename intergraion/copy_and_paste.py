@@ -32,9 +32,9 @@ def fill_hand_joints(output_json,pred_rhand_joints_3d,pred_lhand_joints_3d):
         ["pinky_tip",20]
     ]
     for pair in correspondence:
-      output_json["rigthHand"][pair[0]]["x"].append(pred_rhand_joints_3d[int(pair[1])][0])
-      output_json["rigthHand"][pair[0]]["y"].append(pred_rhand_joints_3d[int(pair[1])][1])
-      output_json["rigthHand"][pair[0]]["z"].append(pred_rhand_joints_3d[int(pair[1])][2])
+      output_json["rightHand"][pair[0]]["x"].append(pred_rhand_joints_3d[int(pair[1])][0])
+      output_json["rightHand"][pair[0]]["y"].append(pred_rhand_joints_3d[int(pair[1])][1])
+      output_json["rightHand"][pair[0]]["z"].append(pred_rhand_joints_3d[int(pair[1])][2])
       output_json["leftHand"][pair[0]]["x"].append(pred_lhand_joints_3d[int(pair[1])][0])
       output_json["leftHand"][pair[0]]["y"].append(pred_lhand_joints_3d[int(pair[1])][1])
       output_json["leftHand"][pair[0]]["z"].append(pred_lhand_joints_3d[int(pair[1])][2])
