@@ -222,7 +222,7 @@ def generate_json_structure():
               "z": []
           }
       },
-      "rigthHand": {
+      "rightHand": {
           "hand": {
               "x": [],
               "y": [],
@@ -357,6 +357,15 @@ def fill_body_joints(output_json,pred_output_list):
       output_json["posenet"][pair[0]]["z"].append(pred_output_list[0][0]["pred_joints_smpl"][pair[1]][2])
     return output_json
 
+def scale_joints(output_json,scale):
+    size = len(data_dict['posenet']['nose']['x']
+    for key in output_json.keys():
+        for little_key in output_json[key].keys():
+          for i in range(size):
+            output_json[key][little_key]['x'][i] = (output_json[key][little_key]['x'][i] + 1.0)*scale[0]
+            output_json[key][little_key]['y'][i] = (output_json[key][little_key]['y'][i] + 1.0)*scale[1]
+            output_json[key][little_key]['z'][i] = (output_json[key][little_key]['z'][i] + 1.0)*scale[2]
+
 def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
     # (to make the order as consistent as possible without tracking)
     bbox_size =  [ (x[2] * x[3]) for x in body_bbox_list]
@@ -472,6 +481,8 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             if video_frame < cur_frame:
                 video_frame += 1
                 continue
+
+            
           # save the obtained video frames
             image_path = osp.join(args.out_dir, "frames", f"{cur_frame:05d}.jpg")
             if img_original_bgr is not None:
@@ -495,7 +506,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
                     cv2.imwrite(image_path, img_original_bgr)
         else:
             assert False, "Unknown input_type"
-
+    
         cur_frame +=1
         if img_original_bgr is None or cur_frame > args.end_frame:
             break   
@@ -510,10 +521,19 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             args, img_original_bgr, 
             body_bbox_list, hand_bbox_list, bbox_detector,
             body_mocap, hand_mocap, output_json)
-
+        #calculando escala da figura
+        if(video_frame == 1):
+          # height, width
+            height = img_original_bgr.shape[0]
+            width = img_original_bgr.shape[0]
+            scalex = width/2
+            scaley = height/2
+            scalez = np.sqrt(scalex**2 + scaley**2)
+            scale = [scalex,scaley,scalez]
         #Associando com nosso Json
         output_json = fill_body_joints(output_json,pred_output_list)
         #salvando nosso output em arquivo
+    output_json = scale_joints(output_json,scale)
     json_name = str(args.input_path)[0:-4] + ".json"
     with open(json_name, "w") as outfile:
         output_json = str(output_json).replace("'",'"')
