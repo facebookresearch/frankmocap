@@ -30,4 +30,4 @@ wget https://dl.fbaipublicfiles.com/eft/fairmocap_data/body_module/J_regressor_e
 #     echo "There exists sample_data already"
 # fi
 
-echo "Done
+echo "Done"
