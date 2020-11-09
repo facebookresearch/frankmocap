@@ -524,8 +524,10 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         #calculando escala da figura
         if(video_frame == 1):
           # height, width
-            height = img_original_bgr.shape[0]
-            width = img_original_bgr.shape[0]
+            # height = img_original_bgr.shape[0]
+            # width = img_original_bgr.shape[0]
+            width = 640
+            height = 360
             scalex = width/2
             scaley = height/2
             scalez = np.sqrt(scalex**2 + scaley**2)
