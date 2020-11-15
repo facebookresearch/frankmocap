@@ -73,18 +73,18 @@ class Whole_Body_eft():
     def backupModel(self):
         print(">>> Model status saved!")
         self.model_backup = copy.deepcopy(self.model_regressor.state_dict())
-        # self.optimizer_backup = copy.deepcopy(self.optimizer.state_dict())
+        self.optimizer_backup = copy.deepcopy(self.optimizer.state_dict())
 
     def reloadModel(self):
         print(">>> Model status has been reloaded to initial!")
         self.model_regressor.load_state_dict(self.model_backup)
-        # self.optimizer.load_state_dict(self.optimizer_backup)
+        self.optimizer.load_state_dict(self.optimizer_backup)
 
-        lr = 5e-5 * 0.2
-        self.optimizer = torch.optim.Adam(params=self.model_regressor.parameters(),
-                                        #   lr=self.options.lr,
-                                            lr =lr,
-                                          weight_decay=0)
+        # lr = 5e-5 * 0.2
+        # self.optimizer = torch.optim.Adam(params=self.model_regressor.parameters(),
+        #                                 #   lr=self.options.lr,
+        #                                     lr =lr,
+        #                                   weight_decay=0)
     def exemplerTrainingMode(self):
 
         for module in self.model_regressor.modules():
@@ -201,8 +201,8 @@ class Whole_Body_eft():
             loss_regr_betas = torch.FloatTensor(1).fill_(0.).to(self.device)
         return loss_regr_pose, loss_regr_betas
 
-    def compute_loss(self, input_batch, pred_rotmat, pred_betas, pred_camera,
-                    bNoHand= False, bNoLegs= False):
+    def compute_loss(self, input_batch, pred_rotmat, pred_betas, pred_camera, input_keypoint_3d= None,
+                    bNoHand= False, bNoLegs= False, bUse_hand_kp2d= True, bUse_hand_mesh= True):
         if bNoHand==False:#g_bUse3DForOptimization:
 
             right_hand_pose = None
@@ -242,6 +242,10 @@ class Whole_Body_eft():
         gt_lhand_2d = input_batch['lhand_joints_2d_bboxNormCoord']# 2D keypoints           #[N,49,3]  or [N,25,3]
         init_rotmat = input_batch['init_rotmat']# 2D keypoints           #[N,49,3]  or [N,25,3]
 
+        if input_keypoint_3d is not None:
+            loss_keypoint_3d = self.criterion_keypoints(input_keypoint_3d, pred_joints_3d).mean()   
+        else:
+            loss_keypoint_3d = None
         loss_keypoints_2d = self.keypoint_loss_openpose25(pred_keypoints_2d, gt_keypoints_2d,1.0)
                                             #self.options.openpose_train_weight)
 
@@ -336,18 +340,22 @@ class Whole_Body_eft():
             if True:
                 loss = loss + loss_straight_legs
 
+        #Add 2D openpose keypoint loss
         if True:
             loss = loss + self.keypoint_loss_weight * loss_keypoints_2d * 50
+
+        if loss_keypoint_3d is not None:
+            loss = loss + loss_keypoint_3d * 1e4 
         
-        if True:        ##TODO: if 3D hand is not valid, sometimes this doesn't work well
-            loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50
-        #         
+        #Add 2D hand loss
+        if bUse_hand_kp2d:        ##TODO: if 3D hand is not valid, sometimes this doesn't work well
+            loss = loss + self.keypoint_loss_weight * loss_keypoints_2d_hand *50       
         
         # loss = loss_pose_3d + \
-        if bNoHand==False:#g_bUse3DForOptimization:
-            loss = loss + hadMeshLossAll*1e-4
+        if bUse_hand_mesh:##bNoHand==False:#g_bUse3DForOptimization:
+            loss = loss + hadMeshLossAll*1e-3
         
-        return loss, pred_output, handMeshVert
+        return loss, pred_output, pred_joints_3d.detach(), handMeshVert
             
 
     def vis_eft_step_output(self, input_batch, pred_camera, pred_smpl_output, hand_mesh):
@@ -362,43 +370,17 @@ class Whole_Body_eft():
         camScale = pred_camera[0] # *1.15
         camTrans = pred_camera[1:]
         pred_vert_vis = convert_smpl_to_bbox(pred_vert_vis, camScale, camTrans)
-        # pred_vert_vis *=pred_camera_vis[b,0]
-        # pred_vert_vis[:,0] += pred_camera_vis[b,1]        #no need +1 (or  112). Rendernig has this offset already
-        # pred_vert_vis[:,1] += pred_camera_vis[b,2]        #no need +1 (or  112). Rendernig has this offset already
-        # pred_vert_vis*=112
         pred_meshes = {'ver': pred_vert_vis, 'f': self.smpl.faces}
-
         # # input_batch['handData']['right_mesh']
         mesh_list = [pred_meshes]
-        # mesh_list =[]       #Debug
 
+        # ############### Visualize Skeletons ############### 
+        # # #Vis pred-SMPL joint
+        pred_joints_vis = pred_smpl_output.joints.detach().cpu().numpy()[0]
+        pred_joints_vis = convert_smpl_to_bbox(pred_joints_vis, camScale, camTrans)
+        pred_joints_vis = pred_joints_vis.ravel()[:,np.newaxis]
 
-            # ############### Visualize Skeletons ############### 
-            # # #Vis pred-SMPL joint
-            # pred_joints_bbox_vis = pred_joints_bbox[b,:,:3].detach().cpu().numpy()  #[N,49,3]
-            # pred_joints_bbox_vis = pred_joints_bbox_vis.ravel()[:,np.newaxis]
-            # glViewer.setSkeleton( [pred_joints_bbox_vis], jointType='spin')
-
-          
-            # # #Add hand mesh 
-            # # #shift size
-            # if bNoHand==False:
-            #     for rl in ["r", "l"] :
-            #         # scaleFactor = 1.0#bboxScale_o2n
-            #         # print(bboxScale_o2n)
-            #         # input_batch['handData'][f'{lr}_mesh']['ver']         #778,3
-            #         # hand_wristJoint = input_batch['handData'][f'{lr}_joint'][:1,:] * scaleFactor             #21,3
-
-            #         # delta = pred_wrists[lr].T - hand_wristJoint
-            #         # print(delta)
-            #         if f'{rl}hand_faces' not in input_batch:
-            #             continue
-
-            #         mesh_face= input_batch[f'{rl}hand_faces']
-            #         tempHandMesh={'ver': handMeshVert[rl].copy(), 'f':mesh_face ,'color':(30, 178, 166) }
-            #         mesh_list.append(tempHandMesh)
-
-            # # # glViewer.setMeshData([pred_meshes], bComputeNormal= True)
+        glViewer.setSkeleton( [pred_joints_vis], jointType='spin')
         glViewer.setMeshData(mesh_list, bComputeNormal= True)
         glViewer.setBackgroundTexture(curImgVis)       #Vis raw video as background
         glViewer.setWindowSize(curImgVis.shape[1]*4, curImgVis.shape[0]*4)
@@ -414,20 +396,23 @@ class Whole_Body_eft():
         glViewer.show(0)
 
 
-    def eft_run(self, input_batch, eftIterNum = 20, is_vis= False):
+    def eft_run(self, input_batch, eftIterNum = 20, is_backup_model=False, is_vis= False):
 
         self.reloadModel()
         
         self.model_regressor.train()
         self.exemplerTrainingMode()
         # self.model_regressor.train()
-        self.exemplerTrainingMode()
+        # self.exemplerTrainingMode()
 
         # input_batch['img_norm'] = input_batch['img_norm'].to(self.device) # input image
         # input_batch['keypoints_2d'] = input_batch['keypoints_2d'].to(self.device) # input image
 
-        for _ in range(eftIterNum):
+        for ii in range(eftIterNum):
             pred_rotmat, pred_betas, pred_camera  = self.eftStep(input_batch, is_vis= is_vis)
+
+        if is_backup_model:
+            self.backupModel()
 
         #Reset Model
         self.reloadModel()
@@ -435,16 +420,54 @@ class Whole_Body_eft():
         return pred_rotmat, pred_betas, pred_camera
 
 
-    def eftStep(self, input_batch, is_vis=False, bNoHand = False, bNoLegs = True, visDebugPause= True):
+    def eft_run_multistage(self, input_batch, eftIterNum = 20, is_backup_model=False, is_vis= False):
+        """
+        First, optimize with 2D keypoint only
+        Second, optimize all with given 3D joint
+        """
+
+        self.reloadModel()
+        
+        self.model_regressor.train()
+        self.exemplerTrainingMode()
+
+        # input_batch['img_norm'] = input_batch['img_norm'].to(self.device) # input image
+        # input_batch['keypoints_2d'] = input_batch['keypoints_2d'].to(self.device) # input image
+
+        #First stage with 2D keypoint only
+        for ii in range(eftIterNum):
+            pred_rotmat, pred_betas, pred_camera, pred_joint_3d  = self.eftStep(input_batch, is_vis= is_vis, bUse_hand_kp2d=False, bUse_hand_mesh=False)
+        
+        if is_backup_model:
+            self.backupModel()
+
+        input_batch['input_keypoint_3d'] = pred_joint_3d       #Put additional 3d joint constratins
+        #Second stage with all keypoint 
+        for ii in range(eftIterNum*2):
+            pred_rotmat, pred_betas, pred_camera, _  = self.eftStep(input_batch,  is_vis= is_vis)
+
+        #Reset Model
+        self.reloadModel()
+
+        return pred_rotmat, pred_betas, pred_camera
+
+
+
+    def eftStep(self, input_batch, is_vis=False, bNoHand = False, bNoLegs = True, visDebugPause= True, bUse_hand_kp2d=True, bUse_hand_mesh=True):
 
         # Get data from the batch
         images = input_batch['img'].to(self.device) # input image
         batch_size = images.shape[0]
 
+        input_keypoint_3d = None
+        if 'input_keypoint_3d' in input_batch.keys():
+            input_keypoint_3d = input_batch['input_keypoint_3d']
+
         #Run prediction
         pred_rotmat, pred_betas, pred_camera = self.model_regressor(images)
 
-        loss, pred_smpl_output, hand_mesh_debug = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera)
+        loss, pred_smpl_output, pred_joints_3d_smplcoord, hand_mesh_debug = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera,
+                                                        input_keypoint_3d = input_keypoint_3d, bUse_hand_kp2d= bUse_hand_kp2d, bUse_hand_mesh= bUse_hand_mesh)
         print(f"EFTstep>> loss: {loss}")
 
         # Do backprop
@@ -455,6 +478,6 @@ class Whole_Body_eft():
         if is_vis:#self.options.bDebug_visEFT:#g_debugVisualize:    #Debug Visualize input
             self.vis_eft_step_output(input_batch, pred_camera, pred_smpl_output, hand_mesh_debug)
 
-        return pred_rotmat, pred_betas, pred_camera #, losses
+        return pred_rotmat, pred_betas, pred_camera, pred_joints_3d_smplcoord #, losses
 
        # #For all sample in the current trainingDB

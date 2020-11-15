@@ -252,12 +252,19 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
     return integral_output_list
 
 
+g_is_firstEFT = True
+eft = None
 def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_list, pred_hand_list, smplx_model, img_original_bgr, body_bbox_list, is_debug_vis=False):
+    global g_is_firstEFT
+    global eft
+
     """
     Peform EFT optimization given 2D keypoint
     """
 
-    eft = Whole_Body_eft(body_module.model_regressor, body_module.smpl)
+    if eft is None:
+        eft = Whole_Body_eft(body_module.model_regressor, body_module.smpl)
+
     image_shape = img_original_bgr.shape
     is_vis = True
 
@@ -328,7 +335,13 @@ def intergration_eft_optimization(body_module, openpose_kp_imgcoord, pred_body_l
         #Additional data for visualization
         input_batch['img_cropped_rgb'] = body_info['img_cropped'] 
 
-        pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = is_debug_vis)
+        if g_is_firstEFT:   #Keep the tuned version after the first EFT
+            # pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_backup_model=True, is_vis = is_debug_vis)
+            pred_rotmat, pred_betas, pred_camera = eft.eft_run_multistage(input_batch, eftIterNum = 20, is_backup_model=True, is_vis = is_debug_vis)
+            g_is_firstEFT = False
+        else:
+            pred_rotmat, pred_betas, pred_camera = eft.eft_run_multistage(input_batch, eftIterNum = 20, is_vis = is_debug_vis)
+
 
         #Save output
         body_info['eft_pred_betas'] = pred_rotmat.detach().cpu().numpy()

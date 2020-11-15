@@ -210,26 +210,27 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         pred_mesh_list = demo_utils.extract_mesh_from_output(pred_output_list)
 
         # visualization
-        res_img = visualizer.visualize(
-            img_original_bgr,
-            pred_mesh_list = pred_mesh_list,
-            body_bbox_list = body_bbox_list,
-            hand_bbox_list = hand_bbox_list)
+        if args.is_opt_debug_vis== False:
+            res_img = visualizer.visualize(
+                img_original_bgr,
+                pred_mesh_list = pred_mesh_list,
+                body_bbox_list = body_bbox_list,
+                hand_bbox_list = hand_bbox_list)
 
-       # show result in the screen
-        if not args.no_display:
-            res_img = res_img.astype(np.uint8)
-            ImShow(res_img)
+        # show result in the screen
+            if not args.no_display:
+                res_img = res_img.astype(np.uint8)
+                ImShow(res_img)
 
-        # save result image
-        if args.out_dir is not None:
-            demo_utils.save_res_img(args.out_dir, image_path, res_img)
+            # save result image
+            if args.out_dir is not None:
+                demo_utils.save_res_img(args.out_dir, image_path, res_img)
 
-        # save predictions to pkl
-        if args.save_pred_pkl:
-            demo_type = 'frank'
-            demo_utils.save_pred_to_pkl(
-                args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
+            # save predictions to pklt6
+            if args.save_pred_pkl:
+                demo_type = 'frank'
+                demo_utils.save_pred_to_pkl(
+                    args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
         print(f"Processed : {image_path}")
 

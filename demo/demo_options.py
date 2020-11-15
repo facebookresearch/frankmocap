@@ -21,9 +21,6 @@ class DemoOptions():
         parser.add_argument('--end_frame', type=int, default=float('inf'), help='given a sequence of frames, set the last frame')
         parser.add_argument('--pkl_dir', type=str, help='Path of storing pkl files that store the predicted results')
 
-
-
-
         #output options
         parser.add_argument('--out_dir', type=str, default=None, help='Folder of output images.')
         # parser.add_argument('--pklout', action='store_true', help='Export mocap output as pkl file')
@@ -31,7 +28,6 @@ class DemoOptions():
         parser.add_argument('--save_pred_pkl', action='store_true', help='Save the predictions (bboxes, params, meshes in pkl format')
         parser.add_argument("--save_mesh", action='store_true', help="Save the predicted vertices and faces")
         parser.add_argument("--save_frame", action='store_true', help='Save the extracted frames from video input or webcam')
-
 
         #Other options
         parser.add_argument('--single_person', action='store_true', help='Reconstruct only one person in the scene with the biggest bbox')
