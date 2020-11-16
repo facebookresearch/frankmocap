@@ -386,14 +386,12 @@ class Whole_Body_eft():
         glViewer.setWindowSize(curImgVis.shape[1]*4, curImgVis.shape[0]*4)
         glViewer.SetOrthoCamera(True)
 
-
-
         #add hand mesh 
         for lr in ['l', 'r']:
             if hand_mesh[lr] is not None:
                 glViewer.addMeshData([hand_mesh[lr]], bComputeNormal= True)
 
-        glViewer.show(0)
+        glViewer.show(1)
 
 
     def eft_run(self, input_batch, eftIterNum = 20, is_backup_model=False, is_vis= False):
@@ -443,7 +441,7 @@ class Whole_Body_eft():
 
         input_batch['input_keypoint_3d'] = pred_joint_3d       #Put additional 3d joint constratins
         #Second stage with all keypoint 
-        for ii in range(eftIterNum*2):
+        for ii in range(eftIterNum*3):
             pred_rotmat, pred_betas, pred_camera, _  = self.eftStep(input_batch,  is_vis= is_vis)
 
         #Reset Model
