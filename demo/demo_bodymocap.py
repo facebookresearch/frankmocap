@@ -60,6 +60,15 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
                 body_bbox_list = input_data[cur_frame]['body_bbox_list']
                 img_original_bgr  = cv2.imread(image_path)
                 load_bbox = True
+
+                #Note: current openpose name should be {raw_image_name}_keypoints.json
+                f_name = os.path.basename(image_path)[:-4] + "_keypoints.json"
+                openpose_file_path = os.path.join(args.open_pose_dir,f_name)
+                assert os.path.exists(openpose_file_path)
+                print(f"Loading openpose data from: {openpose_file_path}")
+                openpose_imgcoord, op_people_selected = demo_utils.read_openpose_wHand(openpose_file_path,dataset='coco')      #25, 3       #TODO: this works for single person in the image
+                assert openpose_imgcoord is not None
+                
             else:
                 img_original_bgr = None
 
@@ -122,7 +131,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
 
         # Body Pose Regression
         if args.post_proc_eft:  
-            pred_output_list = body_mocap.regress_and_eft(img_original_bgr, body_bbox_list, openpose_imgcoord)     #Apply eft post processing with openpose
+            pred_output_list = body_mocap.regress_and_eft(img_original_bgr, body_bbox_list, openpose_imgcoord, args.is_opt_debug_vis)     #Apply eft post processing with openpose
         else:
             pred_output_list = body_mocap.regress(img_original_bgr, body_bbox_list)
         assert len(body_bbox_list) == len(pred_output_list)
@@ -130,26 +139,27 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
         # extract mesh for rendering (vertices in image space and faces) from pred_output_list
         pred_mesh_list = demo_utils.extract_mesh_from_output(pred_output_list)
 
-        # visualization
-        res_img = visualizer.visualize(
-            img_original_bgr,
-            pred_mesh_list = pred_mesh_list, 
-            body_bbox_list = body_bbox_list)
+        if args.is_opt_debug_vis==False:
+            # visualization
+            res_img = visualizer.visualize(
+                img_original_bgr,
+                pred_mesh_list = pred_mesh_list, 
+                body_bbox_list = body_bbox_list)
 
-        # show result in the screen
-        if not args.no_display:
-            res_img = res_img.astype(np.uint8)
-            ImShow(res_img)
+            # show result in the screen
+            if not args.no_display:
+                res_img = res_img.astype(np.uint8)
+                ImShow(res_img)
 
-        # save result image
-        if args.out_dir is not None:
-            demo_utils.save_res_img(args.out_dir, image_path, res_img)
+            # save result image
+            if args.out_dir is not None:
+                demo_utils.save_res_img(args.out_dir, image_path, res_img)
 
-        # save predictions to pkl
-        if args.save_pred_pkl:
-            demo_type = 'body'
-            demo_utils.save_pred_to_pkl(
-                args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
+            # save predictions to pkl
+            if args.save_pred_pkl:
+                demo_type = 'body'
+                demo_utils.save_pred_to_pkl(
+                    args, demo_type, image_path, body_bbox_list, hand_bbox_list, pred_output_list)
 
         timer.toc(bPrint=True,title="Time")
         print(f"Processed : {image_path}")

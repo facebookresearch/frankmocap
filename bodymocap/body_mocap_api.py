@@ -153,7 +153,7 @@ class BodyMocap(object):
         return pred_output_list
     
 
-    def regress_and_eft(self, img_original, body_bbox_list, openpose_kp_imgcoord):
+    def regress_and_eft(self, img_original, body_bbox_list, openpose_kp_imgcoord, is_opt_debug_vis= False):
         """
             args: 
                 img_original: original raw image (BGR order by using cv2.imread)
@@ -193,12 +193,11 @@ class BodyMocap(object):
                 pred_output_list.append(None)
                 continue
 
-
-            if False:    #Visualize Bbox and Openpose
+            if is_opt_debug_vis:    #Visualize Bbox and Openpose
                 import renderer.viewer2D as viewer2D
                 img_cropped_vis = img
                 img_cropped_vis = viewer2D.Vis_Skeleton_2D_Openpose25( (openpose_bboxNormcoord['pose_keypoints_2d'][0,:,:2]+1)*112, openpose_bboxNormcoord['pose_keypoints_2d'][0,:,2],image =img_cropped_vis)
-                viewer2D.ImShow(img_cropped_vis, waitTime=0, scale=4.0, name="openpose_cropped")
+                viewer2D.ImShow(img_cropped_vis, waitTime=1, scale=4.0, name="openpose_cropped")
 
             # with torch.no_grad():
             if True:
@@ -216,7 +215,7 @@ class BodyMocap(object):
                 #Additional data for visualization
                 input_batch['img_cropped_rgb'] = img
 
-                pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = False)
+                pred_rotmat, pred_betas, pred_camera = eft.eft_run(input_batch, eftIterNum = 20, is_vis = is_opt_debug_vis)
 
 
                 #Convert rot_mat to aa since hands are always in aa

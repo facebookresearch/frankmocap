@@ -162,6 +162,9 @@ def load_info_from_json(json_path):
     # image path
     assert ('image_path' in data), "Path of input image should be specified"
     image_path = data['image_path']
+
+    image_path = os.path.join('/run/media/hjoo/disk/data/ava-dataset-tool/frames/trainval/XV_FF3WC7kA', os.path.basename(image_path))
+
     assert osp.exists(image_path), f"{image_path} does not exists"
     # body bboxes
     body_bbox_list = list()
