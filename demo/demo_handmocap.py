@@ -14,7 +14,7 @@ import mocap_utils.demo_utils as demo_utils
 
 from handmocap.hand_mocap_api import HandMocap
 from handmocap.hand_bbox_detector import HandBboxDetector
-
+import renderer.image_utils as imu
 from renderer.viewer2D import ImShow
 import time
 
