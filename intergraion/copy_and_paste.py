@@ -181,7 +181,8 @@ def intergration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_s
         pred_lhand_joints_3d = pred_lhand_joints_3d[0].detach().cpu().numpy()
 
         #associando as juntas das maos ao output_json
-        output_json = fill_hand_joints(output_json,pred_rhand_joints_3d,pred_lhand_joints_3d)
+        if(i==0):
+            output_json = fill_hand_joints(output_json,pred_rhand_joints_3d,pred_lhand_joints_3d)
 
         camScale = body_info["pred_camera"][0]
         camTrans = body_info["pred_camera"][1:]
