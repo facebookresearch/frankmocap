@@ -110,9 +110,9 @@ class Visualizer(object):
 
         # render predicted meshes
         if pred_mesh_list is not None:
-            rend_img = self.__render_pred_verts(input_img, pred_mesh_list)
+            rend_img, side_img  = self.__render_pred_verts(input_img, pred_mesh_list)
             if rend_img is not None:
-                res_img = np.concatenate((res_img, rend_img), axis=1)
+                res_img = np.concatenate((res_img, rend_img, side_img), axis=1)
             # res_img = rend_img
         
         return res_img
@@ -135,11 +135,11 @@ class Visualizer(object):
             self._visualize_gui_naive(pred_mesh_list_offset, img_original=res_img)
             overlaidImg = None
         else:
-            self._visualize_screenless_naive(pred_mesh_list_offset, img_original=res_img)
+            self._visualize_screenless_naive(pred_mesh_list_offset, img_original=res_img, show_side= True)
             overlaidImg = self.renderout['render_camview']
-            # sideImg = self.renderout['render_sideview']
+            sideImg = self.renderout['render_sideview']
 
-        return overlaidImg
+        return overlaidImg, sideImg
 
 
     def _visualize_screenless_naive(self, meshList, skelList=None, body_bbox_list=None, img_original=None, show_side = False, vis=False, maxHeight = 1080):
