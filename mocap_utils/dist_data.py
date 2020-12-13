@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+
 import os, sys, shutil
 import os.path as osp
 import general_utils as gnu
