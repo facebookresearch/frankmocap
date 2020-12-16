@@ -114,7 +114,7 @@ class HMR(nn.Module):
         return nn.Sequential(*layers)
 
 
-    def forward(self, x, init_pose=None, init_shape=None, init_cam=None, n_iter=3):
+    def forward(self, x, init_pose=None, init_shape=None, init_cam=None, n_iter=3, return_features=False):
 
         batch_size = x.shape[0]
 
@@ -153,7 +153,11 @@ class HMR(nn.Module):
         
         pred_rotmat = rot6d_to_rotmat(pred_pose).view(batch_size, 24, 3, 3)
 
-        return pred_rotmat, pred_shape, pred_cam
+        if return_features:
+            features= [xf, xc]        #2048 feature, 1024 feature
+            return pred_rotmat, pred_shape, pred_cam, features
+        else:
+            return pred_rotmat, pred_shape, pred_cam
 
 def hmr(smpl_mean_params, pretrained=True, **kwargs):
     """ Constructs an HMR model with ResNet50 backbone.

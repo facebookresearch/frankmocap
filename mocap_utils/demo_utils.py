@@ -122,9 +122,11 @@ def setup_input(args):
         input_data = list()
         for json_file in json_files:
             json_path = osp.join(args.input_path, json_file)
-            image_path, body_bbox_list, hand_bbox_list = load_info_from_json(json_path)
+            image_path, body_bbox_list, hand_bbox_list, json_data = load_info_from_json(json_path, return_data=True)
             input_data.append(dict(
                 image_path = image_path,
+                json_path = json_path,
+                json_data = json_data,
                 hand_bbox_list = hand_bbox_list,
                 body_bbox_list = body_bbox_list
             ))
@@ -157,7 +159,7 @@ def extract_mesh_from_output(pred_output_list):
     return pred_mesh_list
                 
     
-def load_info_from_json(json_path):
+def load_info_from_json(json_path, return_data=False):
     data = gnu.load_json(json_path)
     # image path
     assert ('image_path' in data), "Path of input image should be specified"
@@ -184,7 +186,10 @@ def load_info_from_json(json_path):
                         hand_bbox[hand_type] = np.array(bbox)
                     else:
                         hand_bbox[hand_type] = None
-    return image_path, body_bbox_list, hand_bbox_list
+    if return_data:
+        return image_path, body_bbox_list, hand_bbox_list, data
+    else:
+        return image_path, body_bbox_list, hand_bbox_list
 
 
 def save_info_to_json(args, image_path, body_bbox_list, hand_bbox_list):

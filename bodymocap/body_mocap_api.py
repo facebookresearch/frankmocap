@@ -74,7 +74,7 @@ class BodyMocap(object):
 
             with torch.no_grad():
                 # model forward
-                pred_rotmat, pred_betas, pred_camera = self.model_regressor(norm_img.to(self.device))
+                pred_rotmat, pred_betas, pred_camera, features = self.model_regressor(norm_img.to(self.device), return_features=True)
 
                 #Convert rot_mat to aa since hands are always in aa
                 # pred_aa = rotmat3x3_to_angle_axis(pred_rotmat)
@@ -131,6 +131,9 @@ class BodyMocap(object):
                 pred_output['bbox_center'] = bbox['center']
                 pred_output['img_cropped'] = img 
                 pred_output['img_cropped_norm'] = norm_img
+
+
+                pred_output['features'] = [f.detach().cpu().numpy()[0] for f in features]
 
 
                 if self.use_smplx:
