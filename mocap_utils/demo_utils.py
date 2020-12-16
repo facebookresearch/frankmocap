@@ -226,7 +226,7 @@ def save_info_to_json(args, image_path, body_bbox_list, hand_bbox_list):
 
 def save_pred_to_pkl(
     args, demo_type, image_path, 
-    body_bbox_list, hand_bbox_list, pred_output_list):
+    body_bbox_list, hand_bbox_list, pred_output_list, openpose_list= None):
 
     smpl_type = 'smplx' if args.use_smplx else 'smpl'
     assert demo_type in ['hand', 'body', 'frank']
@@ -244,6 +244,8 @@ def save_pred_to_pkl(
     saved_data['image_path'] = osp.abspath(image_path)
     saved_data['body_bbox_list'] = body_bbox_list
     saved_data['hand_bbox_list'] = hand_bbox_list
+    if openpose_list is not None:
+        saved_data['openpose_list'] = openpose_list
     saved_data['save_mesh'] = args.save_mesh
 
     saved_data['pred_output_list'] = list()

@@ -31,7 +31,8 @@ class Body_eft():
 
     def __init__(self, model, smpl):
         #Basic
-        self.smpl_mapping = pickle.load(open("/home/hjoo/codes/handmocap/SMPLX_HAND_INFO.pkl", "rb"))
+        # self.smpl_mapping = pickle.load(open("/home/hjoo/codes/handmocap/SMPLX_HAND_INFO.pkl", "rb"))
+        self.smpl_mapping = pickle.load(open("./extra_data/hand_module/SMPLX_HAND_INFO.pkl", "rb"))
         
         self.model_regressor = model
 
@@ -418,8 +419,12 @@ class Body_eft():
         # input_batch['img_norm'] = input_batch['img_norm'].to(self.device) # input image
         # input_batch['keypoints_2d'] = input_batch['keypoints_2d'].to(self.device) # input image
 
+        loss_history =[]
         for _ in range(eftIterNum):
-            pred_rotmat, pred_betas, pred_camera  = self.eftStep(input_batch, is_vis= is_vis)
+            pred_rotmat, pred_betas, pred_camera, loss  = self.eftStep(input_batch, is_vis= is_vis)
+            loss_history.append(loss)
+
+        print(">> EFT log: init loss{} -> final loss{}".format(loss_history[0],loss_history[-1] ) )
 
         #Reset Model
         self.reloadModel()
@@ -437,7 +442,7 @@ class Body_eft():
         pred_rotmat, pred_betas, pred_camera = self.model_regressor(images)
 
         loss, pred_smpl_output = self.compute_loss(input_batch, pred_rotmat, pred_betas, pred_camera)
-        print(f"EFTstep>> loss: {loss}")
+        # print(f"EFTstep>> loss: {loss}")
 
         # Do backprop
         self.optimizer.zero_grad()
@@ -447,6 +452,6 @@ class Body_eft():
         if is_vis:#self.options.bDebug_visEFT:#g_debugVisualize:    #Debug Visualize input
             self.vis_eft_step_output(input_batch, pred_camera, pred_smpl_output)
 
-        return pred_rotmat, pred_betas, pred_camera #, losses
+        return pred_rotmat, pred_betas, pred_camera, loss#, losses
 
        # #For all sample in the current trainingDB
