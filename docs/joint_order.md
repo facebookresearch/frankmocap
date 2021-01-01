@@ -14,7 +14,7 @@ To obtain predicted 3D hand joint position, you can use [pred_joints_img](https:
 The order of hand joint position is visualized below:
 
 <p>
-    <img src="https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/.github/media/keypoints_hand.png" height="250">
+    <img src="https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/.github/media/keypoints_hand.png" height="500">
 </p>
 
 
