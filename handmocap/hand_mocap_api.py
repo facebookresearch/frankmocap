@@ -194,9 +194,9 @@ class HandMocap:
                         pred_output[hand_type]['img_cropped'] = img_cropped
 
                         # pred hand pose & shape params & hand joints 3d
-                        pred_output[hand_type]['pred_hand_pose'] = pred_pose
+                        pred_output[hand_type]['pred_hand_pose'] = pred_pose # (1, 48): (1, 3) for hand rotation, (1, 45) for finger pose.
                         pred_output[hand_type]['pred_hand_betas'] = pred_res['pred_shape_params'] # (1, 10)
-                        
+
                         #Convert vertices into bbox & image space
                         cam_scale = cam[0]
                         cam_trans = cam[1:]

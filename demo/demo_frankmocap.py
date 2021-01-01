@@ -24,6 +24,7 @@ from bodymocap.body_bbox_detector import BodyPoseEstimator
 from handmocap.hand_bbox_detector import HandBboxDetector
 from integration.copy_and_paste import integration_copy_paste
 
+import renderer.image_utils as imu
 from renderer.viewer2D import ImShow
 
 
@@ -193,7 +194,7 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
             pred_mesh_list = pred_mesh_list,
             body_bbox_list = body_bbox_list,
             hand_bbox_list = hand_bbox_list)
-
+        
        # show result in the screen
         if not args.no_display:
             res_img = res_img.astype(np.uint8)

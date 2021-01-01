@@ -112,7 +112,7 @@ class BodyMocap(object):
                 pred_output['pred_joints_img'] = pred_joints_vis_img # SMPL joints in image space
 
                 pred_aa_tensor = gu.rotation_matrix_to_angle_axis(pred_rotmat.detach().cpu()[0])
-                pred_output['pred_body_pose'] = pred_aa_tensor.cpu().numpy().reshape(1, 72)
+                pred_output['pred_body_pose'] = pred_aa_tensor.cpu().numpy().reshape(1, 72) # (1, 72)
 
                 pred_output['pred_rotmat'] = pred_rotmat.detach().cpu().numpy() # (1, 24, 3, 3)
                 pred_output['pred_betas'] = pred_betas.detach().cpu().numpy() # (1, 10)

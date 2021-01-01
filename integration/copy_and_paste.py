@@ -141,8 +141,12 @@ def integration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_sh
 
         pred_vertices = smplx_output.vertices
         pred_vertices = pred_vertices[0].detach().cpu().numpy()
-        pred_joints_3d = smplx_output.joints
-        pred_joints_3d = pred_joints_3d[0].detach().cpu().numpy()   
+        pred_body_joints = smplx_output.joints
+        pred_body_joints = pred_body_joints[0].detach().cpu().numpy()   
+        pred_lhand_joints = smplx_output.left_hand_joints
+        pred_lhand_joints = pred_lhand_joints[0].detach().cpu().numpy()
+        pred_rhand_joints = smplx_output.right_hand_joints
+        pred_rhand_joints = pred_rhand_joints[0].detach().cpu().numpy()
 
         camScale = body_info['pred_camera'][0]
         camTrans = body_info['pred_camera'][1:]
@@ -166,6 +170,26 @@ def integration_copy_paste(pred_body_list, pred_hand_list, smplx_model, image_sh
         pred_vertices_img = convert_bbox_to_oriIm(
             pred_vertices_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
         integral_output['pred_vertices_img'] = pred_vertices_img
+
+        # convert joints to original image space (X, Y are aligned to image)
+        pred_body_joints_bbox = convert_smpl_to_bbox(
+            pred_body_joints, camScale, camTrans)
+        pred_body_joints_img = convert_bbox_to_oriIm(
+            pred_body_joints_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
+        integral_output['pred_body_joints_img'] = pred_body_joints_img
+
+        # convert left /right joints to original image space (X, Y are aligned to image)
+        pred_lhand_joints_bbox = convert_smpl_to_bbox(
+            pred_lhand_joints, camScale, camTrans)
+        pred_lhand_joints_img = convert_bbox_to_oriIm(
+            pred_lhand_joints_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
+        integral_output['pred_lhand_joints_img'] = pred_lhand_joints_img
+
+        pred_rhand_joints_bbox = convert_smpl_to_bbox(
+            pred_rhand_joints, camScale, camTrans)
+        pred_rhand_joints_img = convert_bbox_to_oriIm(
+            pred_rhand_joints_bbox, bbox_scale_ratio, bbox_top_left, image_shape[1], image_shape[0])
+        integral_output['pred_rhand_joints_img'] = pred_rhand_joints_img
 
         # keep hand info
         r_hand_local_orient_body = body_info['pred_rotmat'][:, 21] # rot-mat

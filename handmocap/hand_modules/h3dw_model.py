@@ -32,7 +32,7 @@ def extract_hand_output(output, hand_type, hand_info, top_finger_joints_type='av
         wrist_idx, hand_start_idx, middle_finger_idx = 20, 25, 28
     else:
         wrist_idx, hand_start_idx, middle_finger_idx = 21, 40, 43
-    
+
     vertices = output.vertices
     joints = output.joints
     vertices_shift = vertices - joints[:, hand_start_idx:hand_start_idx+1, :]
@@ -44,35 +44,13 @@ def extract_hand_output(output, hand_type, hand_info, top_finger_joints_type='av
     hand_verts = vertices[:, hand_verts_idx, :]
     hand_verts_shift = hand_verts - joints[:, hand_start_idx:hand_start_idx+1, :]
 
-    hand_joints = torch.cat((joints[:, wrist_idx:wrist_idx+1, :], 
-        joints[:, hand_start_idx:hand_start_idx+15, :] ), dim=1)
-
-    # add top hand joints
-    if len(top_finger_joints_type) > 0:
-        if top_finger_joints_type in ['long', 'manual']:
-            key = f'{hand_type}_top_finger_{top_finger_joints_type}_vert_idx'
-            top_joint_vert_idx = hand_info[key]
-            hand_joints = torch.cat((hand_joints, vertices[:, top_joint_vert_idx, :]), dim=1)
-        else:
-            assert top_finger_joints_type == 'ave'
-            key1 = f'{hand_type}_top_finger_{top_finger_joints_type}_vert_idx'
-            key2 = f'{hand_type}_top_finger_{top_finger_joints_type}_vert_weight'
-            top_joint_vert_idxs = hand_info[key1]
-            top_joint_vert_weight = hand_info[key2]
-            bs = vertices.size(0)
-
-            for top_joint_id, selected_verts in enumerate(top_joint_vert_idxs):
-                top_finger_vert_idx = hand_verts_idx[np.array(selected_verts)]
-                top_finger_verts = vertices[:, top_finger_vert_idx]
-                # weights = torch.from_numpy(np.repeat(top_joint_vert_weight[top_joint_id]).reshape(1, -1, 1)
-                weights = top_joint_vert_weight[top_joint_id].reshape(1, -1, 1)
-                weights = np.repeat(weights, bs, axis=0)
-                weights = torch.from_numpy(weights)
-                if use_cuda:
-                    weights = weights.cuda()
-                top_joint = torch.sum((weights * top_finger_verts),dim=1).view(bs, 1, 3)
-                hand_joints = torch.cat((hand_joints, top_joint), dim=1)
-
+   # Hand joints
+    if hand_type == 'left':
+        hand_idxs =  [20] + list(range(25,40)) + list(range(66, 71)) # 20 for left wrist. 20 finger joints
+    else:
+        hand_idxs = [21] + list(range(40,55)) + list(range(71, 76)) # 21 for right wrist. 20 finger joints
+    smplx_hand_to_panoptic = [0, 13,14,15,16, 1,2,3,17, 4,5,6,18, 10,11,12,19, 7,8,9,20] 
+    hand_joints = joints[:, hand_idxs, :][:, smplx_hand_to_panoptic, :]
     hand_joints_shift = hand_joints - joints[:, hand_start_idx:hand_start_idx+1, :]
 
     output = dict(
@@ -262,13 +240,6 @@ class H3DWModel(object):
         self.pred_verts, self.pred_joints_3d = self.get_smplx_output(
             self.pred_pose_params, self.pred_shape_params)
 
-        # generate additional visualization of mesh, with constant camera params
-        # self.generate_mesh_multi_view()
-
-        # generate predicted joints 2d
-        self.pred_joints_2d = self.batch_orth_proj_idrot(
-            self.pred_joints_3d, self.pred_cam_params)
-        
 
     def test(self):
         with torch.no_grad():

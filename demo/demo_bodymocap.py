@@ -19,6 +19,7 @@ import mocap_utils.demo_utils as demo_utils
 import mocap_utils.general_utils as gnu
 from mocap_utils.timer import Timer
 
+import renderer.image_utils as imu
 from renderer.viewer2D import ImShow
 
 def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
@@ -120,7 +121,7 @@ def run_body_mocap(args, body_bbox_detector, body_mocap, visualizer):
             img_original_bgr,
             pred_mesh_list = pred_mesh_list, 
             body_bbox_list = body_bbox_list)
-
+        
         # show result in the screen
         if not args.no_display:
             res_img = res_img.astype(np.uint8)

@@ -33,7 +33,7 @@ class OpendrRenderer(object):
 
         input_size = 500
 
-        f = 5
+        f = 10
 
         verts[:, 0] = (verts[:, 0] - input_size) / input_size
         verts[:, 1] = (verts[:, 1] - input_size) / input_size
