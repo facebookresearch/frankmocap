@@ -1,17 +1,19 @@
 # Joint Order (Position & Rotation)
 
 ## Attention !!!
-For both body and hand, the order of joint position and joint angles are different. Please find the details below.
+The orders of joint position and joint angle are different. The details are listed below.
 
 ## Hand Joint
 ### Joint Position (Hand)
+
+The joint positions are  converted to image space (X,Y coordinates are aligned to image, Z coordinates are rescaled accordingly.)  
 
 To obtain predicted 3D hand joint position, you can use [pred_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/handmocap/hand_mocap_api.py#L222) in hand-only demo or 
 [pred_lhand_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L186) and [pred_rhand_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L192) in body-plus-hand demo.  
 
 The order of hand joint position is depicted as below:
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/video_02.gif" height="200">
+    <img src="https://penincillin.github.io/frank_mocap/hand_joint_order.png" height="200">
 </p>
 
 The order of hand joint (position) is listed below:
@@ -41,7 +43,8 @@ The order of hand joint (position) is listed below:
 
 ### Joint Angle (Hand)
 To obtain predicted 3D hand joint angles (in [angle-axis format](https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation)), you can use [pred_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/handmocap/hand_mocap_api.py#L197) in hand-only demo or [pred_left_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L234) [pred_right_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L235) in body-plus-hand demo.  
-If the dimension of ```hand_pose``` is 45 (15 * 3), then the joint starts from ```Index_00```; otherwise the dimension should be 48 (16 * 3) and the joint start from wrist (or say, hand global orientation).  
+
+If the dimension of ```hand_pose``` is 45 (15 * 3), then the joint starts from ```Index_00```; otherwise the dimension should be 48 (16 * 3) and the joint starts from wrist (or say, hand global orientation).  
 
 The order of hand joint (angle) is listed below:
 ```
@@ -61,6 +64,101 @@ The order of hand joint (angle) is listed below:
 13 : Thumb_00
 14 : Thumb_01
 15 : Thumb_02
+```
+
+
+## Body Joint
+### Joint Position (Body)
+
+The joint positions are  converted to image space (X,Y coordinates are aligned to image, Z coordinates are rescaled accordingly.)  
+
+To obtain predicted 3D body joint position, you can use [pred_joints_img](https://github.com/facebookresearch/frankmocap/blob/44f4f6718a45baf0836c9785f02ea1d74f6f5774/bodymocap/body_mocap_api.py#L112) in body-only demo or 
+[pred_body_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L179) in body-plus-hand demo.  
+
+The order of body joint (position) is listed below:
+```
+0: OP_Nose
+1: OP_Neck
+2: OP_R_Shoulder
+3: OP_R_Elblow
+4: OP_R_Wrist
+5: OP_L_Shoulder
+6: OP_L_Elbow
+7: OP_L_Wrist
+8: OP_Middle_Hip
+9: OP_R_Hip
+10: OP_R_Knee
+11: OP_R_Ankle
+12: OP_L_Hip
+13: OP_L_Knee
+14: OP_L_Ankle
+15: OP_R_Eye
+16: OP_L_Eye
+17: OP R_Ear
+18: OP_L_Ear
+19: OP_L_Big_Toe
+20: OP_L_Small_Toe
+21: OP_L_Heel
+22: OP_R_Big_Toe
+23: OP_R_Small_Toe
+24: OP_R_Heel
+25: R_Ankle
+26: R_Knee
+27: R_Hip
+28: L_Hip
+29: L_Knee
+30: L_Ankle
+31: R_Wrist
+32: R_Elbow
+33: R_Shoulder
+34: L_Shoulder
+35: L_Elbow
+36: L_Wrist
+37: Neck (LSP)
+38: Top of Head (LSP)
+39: Pelvis (MPII)
+40: Thorax (MPII)
+41: Spine (H36M)
+42: Jaw (H36M)
+43: Head (H36M)
+44: Nose
+45: L_Eye
+46: R_Eye
+47: L_Ear
+48: R_Ear
+```
+
+### Joint Angle (Body)
+To obtain predicted 3D body joint angles (in [angle-axis format](https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation)), you can use [pred_body_pose](https://github.com/facebookresearch/frankmocap/blob/44f4f6718a45baf0836c9785f02ea1d74f6f5774/bodymocap/body_mocap_api.py#L115) in body-only demo or [pred_left_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L164) in body-plus-hand demo.  
+
+The dimesion should be 72 (24 * 3).  It is worth noting that if we use SMPL-X is used for body module, then the 22-th and 23-th body joint angles are invalid, we keep it only for consistent format with SMPL.
+
+The order of body joint (angle) is listed below:
+```
+0: Global
+1: L_Hip
+2: R_Hip
+3: Spine_01
+4: L_Knee
+5: R_Knee
+6: Spine_02
+7: L_Ankle
+8: R_Ankle
+9: Spine_03
+10: L_Toe
+11: R_Toe
+12: Middle_Shoulder
+13: L_Clavice
+14: R_Clavice
+15: Nose
+16: L_Shoulder
+17: R_Shoulder
+18: L_Elbow
+19: R_Elbow
+20: L_Wrist
+21: R_Wrist
+22: L_Palm (Invalid for SMPL-X)
+23: R_Palm (Invalid for SMPL-X)
 ```
 
 
