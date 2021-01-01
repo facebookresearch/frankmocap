@@ -65,6 +65,10 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
 - Note: 
   - Above commands use openGL by default. If it does not work, you may try alternative renderers (pytorch3d or openDR). 
   - See the readme of each module for details
+  
+  
+## Joint Order
+- See [joint_order](docs/joint_order.md)
 
 
 ## Body Motion Capture Module
