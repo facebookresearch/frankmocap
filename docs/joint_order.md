@@ -11,10 +11,12 @@ The joint positions are  converted to image space (X,Y coordinates are aligned t
 To obtain predicted 3D hand joint position, you can use [pred_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/handmocap/hand_mocap_api.py#L222) in hand-only demo or 
 [pred_lhand_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L186) and [pred_rhand_joints_img](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L192) in body-plus-hand demo.  
 
-The order of hand joint position is depicted as below:
+The order of hand joint position is visualized below:
+
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/hand_joint_order.png" height="200">
+    <img src="https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/.github/media/keypoints_hand.png" height="250">
 </p>
+
 
 The order of hand joint (position) is listed below:
 ```
