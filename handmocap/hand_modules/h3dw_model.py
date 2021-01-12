@@ -212,14 +212,6 @@ class H3DWModel(object):
         return pred_verts, pred_joints_3d
 
 
-    def batch_orth_proj_idrot(self, X, camera):
-        # camera is (batchSize, 1, 3)
-        camera = camera.view(-1, 1, 3)
-        X_trans = X[:, :, :2] + camera[:, :, 1:]
-        res = camera[:, :, 0] * X_trans.view(X_trans.size(0), -1)
-        return res.view(X_trans.size(0), X_trans.size(1), -1)
-
-
     def forward(self):
         # get predicted params first
         self.output = self.encoder(self.input_img)
