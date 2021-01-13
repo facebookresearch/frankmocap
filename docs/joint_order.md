@@ -46,6 +46,12 @@ The order of hand joint (position) is listed below:
 ### Joint Angle (Hand)
 To obtain predicted 3D hand joint angles (in [angle-axis format](https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation)), you can use [pred_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/handmocap/hand_mocap_api.py#L197) in hand-only demo or [pred_left_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L234) [pred_right_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L235) in body-plus-hand demo.  
 
+The axis of joint angle is depicted below (right-hand rule):
+<p>
+    <img src="https://penincillin.github.io/frank_mocap/axis.png" height="500">
+</p>
+
+
 If the dimension of ```hand_pose``` is 45 (15 * 3), then the joint starts from ```Index_00```; otherwise the dimension should be 48 (16 * 3) and the joint starts from wrist (or say, hand global orientation).  
 
 The order of hand joint (angle) is listed below:
