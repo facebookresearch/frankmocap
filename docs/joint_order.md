@@ -14,7 +14,7 @@ To obtain predicted 3D hand joint position, you can use [pred_joints_img](https:
 The order of hand joint position is visualized below:
 
 <p>
-    <img src="https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/.github/media/keypoints_hand.png" height="300">
+    <img src="https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/.github/media/keypoints_hand.png" height="500">
 </p>
 
 
@@ -48,7 +48,7 @@ To obtain predicted 3D hand joint angles (in [angle-axis format](https://en.wiki
 
 The axis of joint angle is depicted below (right-hand rule):
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/axis.png" height="500">
+    <img src="https://penincillin.github.io/frank_mocap/axis.png" height="300">
 </p>
 
 
