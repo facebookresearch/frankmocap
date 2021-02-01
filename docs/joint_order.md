@@ -137,9 +137,9 @@ The order of body joint (position) is listed below:
 ```
 
 ### Joint Angle (Body)
-To obtain predicted 3D body joint angles (in [angle-axis format](https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation)), you can use [pred_body_pose](https://github.com/facebookresearch/frankmocap/blob/44f4f6718a45baf0836c9785f02ea1d74f6f5774/bodymocap/body_mocap_api.py#L115) in body-only demo or [pred_left_hand_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L164) in body-plus-hand demo.  
+To obtain predicted 3D body joint angles (in [angle-axis format](https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation)), you can use [pred_body_pose](https://github.com/facebookresearch/frankmocap/blob/44f4f6718a45baf0836c9785f02ea1d74f6f5774/bodymocap/body_mocap_api.py#L115) in body-only demo or [pred_body_pose](https://github.com/facebookresearch/frankmocap/blob/60584337f81795b1b9fe4f4da5ffe273f6f1266a/integration/copy_and_paste.py#L164) in body-plus-hand demo.  
 
-The dimesion should be 72 (24 * 3).  It is worth noting that if we use SMPL-X is used for body module, then the 22-th and 23-th body joint angles are invalid, we keep it only for consistent format with SMPL.
+The dimesion should be 72 (24 * 3).  It is worth noting that if SMPL-X is used for body module, then the 22-th and 23-th body joint angles are invalid, we keep it for the consistent format with SMPL.
 
 The order of body joint (angle) is listed below:
 ```
