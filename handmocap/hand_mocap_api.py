@@ -65,7 +65,7 @@ class HandMocap:
         
         # add additional margin
         if add_margin:
-            margin = int(0.3 * (max_y-min_y)) # if use loose crop, change 0.03 to 0.1
+            margin = int(0.3 * (max_y-min_y)) # if use loose crop, change 0.3 to 1.0
             min_y = max(min_y-margin, 0)
             max_y = min(max_y+margin, ori_height)
             min_x = max(min_x-margin, 0)
