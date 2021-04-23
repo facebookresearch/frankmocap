@@ -28,10 +28,10 @@ Our whole body motion capture is based on our [FrankMocap paper](https://peninci
 ## Run Demo with A Webcam Input
 - Run,
     ```
-        python -m demo.demo_frankmocap --input_path webcam
+        python -m demo.demo_frankmocap --input_path webcam --out_dir ./mocap_output
 
         #or using opengl gui renderer
-        python -m demo.demo_frankmocap --input_path webcam --renderer_type opengl_gui
+        python -m demo.demo_frankmocap --input_path webcam --out_dir ./mocap_output --renderer_type opengl_gui
     ```
 - See below to see how to control in opengl gui mode
 
