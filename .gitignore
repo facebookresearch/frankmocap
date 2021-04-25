@@ -34,3 +34,4 @@ demo.sh
 demo_multi.sh
 mocap_utils/frame_to_video.py
 mocap_utils/frame_to_gif.py
+mocap_utils/select_epick_kitchen.py

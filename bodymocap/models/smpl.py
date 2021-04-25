@@ -77,15 +77,14 @@ class SMPLX(_SMPLX):
         extra_joints = vertices2joints(self.J_regressor_extra, smpl_output.vertices)
         # extra_joints = vertices2joints(self.J_regressor_extra, smpl_output.vertices[:,:6890])   *0      #TODO: implement this correctly
 
-
         #SMPL-X Joint order: https://docs.google.com/spreadsheets/d/1_1dLdaX-sbMkCKr_JzJW_RZCpwBwd7rcKkWT_VgAQ_0/edit#gid=0
-        smplx_to_smpl = list(range(0,22)) + [28,43] + list(range(55,76))        #28 left middle finger , 43: right middle finger 1
-        smpl_joints = smpl_output.joints[:,smplx_to_smpl,:]       #Convert SMPL-X to SMPL     127 ->45
-        joints = torch.cat([smpl_joints, extra_joints], dim=1)               #[N, 127, 3]->[N, 45, 3]  + [N, 9, 3]        #SMPL-X has more joints. should convert 45
+        smplx_to_smpl = list(range(0,22)) + [28,43] + list(range(55,76)) # 28 left middle finger , 43: right middle finger 1
+        smpl_joints = smpl_output.joints[:,smplx_to_smpl,:] # Convert SMPL-X to SMPL     127 ->45
+        joints = torch.cat([smpl_joints, extra_joints], dim=1) # [N, 127, 3]->[N, 45, 3]  + [N, 9, 3]  # SMPL-X has more joints. should convert 45
         joints = joints[:, self.joint_map, :]     
 
         # Hand joints
-        smplx_hand_to_panoptic = [0,   13,14,15,16, 1,2,3,17, 4,5,6,18, 10,11,12,19, 7,8,9,20] #Wrist Thumb to Pinky
+        smplx_hand_to_panoptic = [0, 13,14,15,16, 1,2,3,17, 4,5,6,18, 10,11,12,19, 7,8,9,20] #Wrist Thumb to Pinky
 
         smplx_lhand =  [20] + list(range(25,40)) + list(range(66, 71))         #20 for left wrist. 20 finger joints
         lhand_joints = smpl_output.joints[:,smplx_lhand, :]      #(N,21,3)
