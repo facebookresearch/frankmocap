@@ -12,10 +12,6 @@ git clone git@github.com:ddshan/hand_object_detector.git
 if [ ! -d hand_object_detector ]; then
     git clone https://github.com/ddshan/hand_object_detector
 fi
-# compile
-cd hand_object_detector/lib
-python setup.py build develop
-cd ../../
 
 # Install 100-DOH hand-only detectors
 git clone git@github.com:ddshan/hand_detector.d2.git
