@@ -40,6 +40,8 @@ def __get_input_type(args):
 
     if extension.lower() in video_exts:
         input_type ='video'
+    if extension.lower() in image_exts:
+        input_type = 'image'
     elif osp.isdir(args.input_path):
         file_list = os.listdir(args.input_path)
         assert len(file_list) >0, f"{args.input_path} is a blank folder"
@@ -109,6 +111,11 @@ def setup_input(args):
     elif input_type =='webcam':
         cap = cv2.VideoCapture(0)       #webcam input
         return input_type, cap
+
+    elif input_type == 'image':
+        image_list = [args.input_path]
+        __img_seq_setup(args)
+        return input_type, image_list
 
     elif input_type =='image_dir':
         image_list = gnu.get_all_files(args.input_path, image_exts, "relative") 
