@@ -156,7 +156,6 @@ def main():
     args.use_smplx = True
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    assert torch.cuda.is_available(), "Current version only supports GPU"
 
     #Set Bbox detector
     bbox_detector =  HandBboxDetector(args.view_type, device)

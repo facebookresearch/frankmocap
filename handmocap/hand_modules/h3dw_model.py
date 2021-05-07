@@ -71,9 +71,13 @@ class H3DWModel(object):
     def name(self):
         return 'H3DWModel'
 
-    def __init__(self, opt):
+    def __init__(self, opt, use_cuda=True):
         self.opt = opt
-        self.Tensor = torch.cuda.FloatTensor
+        self.use_cuda = use_cuda
+        if use_cuda:
+            self.Tensor = torch.cuda.FloatTensor
+        else:
+            self.Tensor = torch.FloatTensor
 
         # set params
         self.inputSize = opt.inputSize
@@ -123,11 +127,17 @@ class H3DWModel(object):
             gender = 'neutral',
             num_betas = 10,
             use_pca = False,
-            ext='pkl').cuda()
+            ext='pkl')
+        if use_cuda:
+            self.smplx.cuda()
 
         # set encoder and optimizer
-        self.encoder = H3DWEncoder(opt, self.mean_params).cuda()
+        self.encoder = H3DWEncoder(opt, self.mean_params, use_cuda=use_cuda)
+        if use_cuda:
+            self.encoder = self.encoder.cuda()
         if opt.dist:
+            if not use_cuda:
+                raise NotImplementedError("No support for DistributedDataParallel and non-CUDA device")
             self.encoder = DistributedDataParallel(
                 self.encoder, device_ids=[torch.cuda.current_device()])
         
@@ -136,11 +146,11 @@ class H3DWModel(object):
             print(f"Error: {checkpoint_path} does not exists")
             self.success_load = False
         else:
-            if self.opt.dist:
+            if opt.dist:
                 self.encoder.module.load_state_dict(torch.load(
                     checkpoint_path, map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device())))
             else:
-                saved_weights = torch.load(checkpoint_path)
+                saved_weights = torch.load(checkpoint_path, map_location=torch.device("cuda" if use_cuda else "cpu"))
                 self.encoder.load_state_dict(saved_weights)
             self.success_load = True
 
@@ -168,7 +178,9 @@ class H3DWModel(object):
         self.mean_params.requires_grad = False
 
         # define global rotation
-        self.global_orient = torch.zeros((self.batch_size, 3), dtype=torch.float32).cuda()
+        self.global_orient = torch.zeros((self.batch_size, 3), dtype=torch.float32)
+        if self.use_cuda:
+            self.global_orient = self.global_orient.cuda()
         # self.global_orient[:, 0] = np.pi
         self.global_orient.requires_grad = False
 
@@ -190,7 +202,9 @@ class H3DWModel(object):
     def get_smplx_output(self, pose_params, shape_params=None):
         hand_rotation = pose_params[:, :3]
         hand_pose = pose_params[:, 3:]
-        body_pose = torch.zeros((self.batch_size, 63)).float().cuda() 
+        body_pose = torch.zeros((self.batch_size, 63)).float()
+        if self.use_cuda:
+            body_pose = body_pose.cuda()
         body_pose[:, 60:] = hand_rotation # set right hand rotation
 
         output = self.smplx(
@@ -205,7 +219,7 @@ class H3DWModel(object):
             hand_type = 'right', 
             hand_info = self.hand_info,
             top_finger_joints_type = self.top_finger_joints_type, 
-            use_cuda=True)
+            use_cuda=self.use_cuda)
 
         pred_verts = hand_output['vertices_shift']
         pred_joints_3d = hand_output['hand_joints_shift']

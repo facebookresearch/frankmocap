@@ -41,7 +41,8 @@ class HandMocap:
         self.opt.process_rank = -1
 
         # self.opt.which_epoch = str(epoch)
-        self.model_regressor = H3DWModel(self.opt)
+        use_cuda = device.type == "cuda"
+        self.model_regressor = H3DWModel(self.opt, use_cuda=use_cuda)
         # if there is no specified checkpoint, then skip
         assert self.model_regressor.success_load, "Specificed checkpoints does not exists: {}".format(self.opt.checkpoint_path)
         self.model_regressor.eval()
