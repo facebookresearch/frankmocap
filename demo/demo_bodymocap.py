@@ -153,10 +153,10 @@ def main():
     args = DemoOptions().parse()
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    assert torch.cuda.is_available(), "Current version only supports GPU"
+    use_cuda = device.type == 'cuda'
 
     # Set bbox detector
-    body_bbox_detector = BodyPoseEstimator()
+    body_bbox_detector = BodyPoseEstimator(use_cuda=use_cuda)
 
     # Set mocap regressor
     use_smplx = args.use_smplx

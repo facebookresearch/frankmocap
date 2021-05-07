@@ -27,7 +27,8 @@ class BodyPoseEstimator(object):
     Hand Detector for third-view input.
     It combines a body pose estimator (https://github.com/jhugestar/lightweight-human-pose-estimation.pytorch.git)
     """
-    def __init__(self):
+    def __init__(self, use_cuda=True):
+        self.use_cuda = use_cuda
         print("Loading Body Pose Estimator")
         self.__load_body_estimator()
     
@@ -38,13 +39,14 @@ class BodyPoseEstimator(object):
         checkpoint = torch.load(pose2d_checkpoint, map_location='cpu')
         load_state(net, checkpoint)
         net = net.eval()
-        net = net.cuda()
+        if self.use_cuda:
+            net = net.cuda()
         self.model = net
     
 
     #Code from https://github.com/Daniil-Osokin/lightweight-human-pose-estimation.pytorch/demo.py
     def __infer_fast(self, img, input_height_size, stride, upsample_ratio, 
-        cpu=False, pad_value=(0, 0, 0), img_mean=(128, 128, 128), img_scale=1/256):
+        use_cuda=True, pad_value=(0, 0, 0), img_mean=(128, 128, 128), img_scale=1/256):
         height, width, _ = img.shape
         scale = input_height_size / height
 
@@ -54,7 +56,7 @@ class BodyPoseEstimator(object):
         padded_img, pad = pad_width(scaled_img, stride, pad_value, min_dims)
 
         tensor_img = torch.from_numpy(padded_img).permute(2, 0, 1).unsqueeze(0).float()
-        if not cpu:
+        if use_cuda:
             tensor_img = tensor_img.cuda()
 
         stages_output = self.model(tensor_img)
@@ -79,8 +81,10 @@ class BodyPoseEstimator(object):
         orig_img = img.copy()
 
         # forward
-        heatmaps, pafs, scale, pad = self.__infer_fast(img, 
-            input_height_size=256, stride=stride, upsample_ratio=upsample_ratio)
+        heatmaps, pafs, scale, pad = self.__infer_fast(
+            img, input_height_size=256, stride=stride, upsample_ratio=upsample_ratio,
+            use_cuda=self.use_cuda
+        )
 
         total_keypoints_num = 0
         all_keypoints_by_type = []
