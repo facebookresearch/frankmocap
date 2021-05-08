@@ -316,10 +316,10 @@ class HandBboxDetector(object):
         if view_type == "ego_centric":
             self.model = Ego_Centric_Detector(use_cuda=use_cuda)
         elif view_type == "third_view":
+            self.model = Third_View_Detector(use_cuda=use_cuda)
         else :
             print("Invalid view_type")
             assert False
-            self.model = Third_View_Detector(use_cuda=use_cuda)
     
 
     def detect_body_bbox(self, img_bgr):
