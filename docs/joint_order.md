@@ -155,9 +155,9 @@ The order of body joint (angle) is listed below:
 9: Spine_03
 10: L_Toe
 11: R_Toe
-12: Middle_Shoulder
-13: L_Clavice
-14: R_Clavice
+12: Neck
+13: L_Collar
+14: R_Collar
 15: Nose
 16: L_Shoulder
 17: R_Shoulder
@@ -168,6 +168,12 @@ The order of body joint (angle) is listed below:
 22: L_Palm (Invalid for SMPL-X)
 23: R_Palm (Invalid for SMPL-X)
 ```
+
+The skeleton of SMPL body is depicted below, for SMPL-X body, the 22-th and 23-th body joint are invalid:
+<p>
+    <img src="https://penincillin.github.io/frank_mocap/body_skeleton.png" height="500">
+</p>
+
 
 
 ## License
