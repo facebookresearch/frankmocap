@@ -31,6 +31,7 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
     while True:
         # load data
         load_bbox = False
+        body_bbox_list = None
 
         if input_type =='image_dir':
             if cur_frame < len(input_data):
@@ -85,7 +86,6 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
         print("--------------------------------------")
 
         # bbox detection
-        body_bbox_list = None
         if load_bbox:
             body_pose_list = None
             raw_hand_bboxes = None
@@ -109,12 +109,13 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
         if len(hand_bbox_list) < 1:
             print(f"No hand deteced: {image_path}")
             continue
+        if body_bbox_list is not None:
+            assert len(hand_bbox_list) == len(body_bbox_list)
     
         # Hand Pose Regression
         pred_output_list = hand_mocap.regress(
                 img_original_bgr, hand_bbox_list, add_margin=True)
-        if not(body_bbox_list is None):
-            assert len(hand_bbox_list) == len(body_bbox_list)
+        if body_bbox_list is not None:
             assert len(body_bbox_list) == len(pred_output_list)
 
         # extract mesh for rendering (vertices in image space and faces) from pred_output_list
