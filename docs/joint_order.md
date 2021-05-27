@@ -158,7 +158,7 @@ The order of body joint (angle) is listed below:
 12: Neck
 13: L_Collar
 14: R_Collar
-15: Nose
+15: Head
 16: L_Shoulder
 17: R_Shoulder
 18: L_Elbow

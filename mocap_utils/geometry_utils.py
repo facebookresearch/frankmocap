@@ -184,3 +184,13 @@ def rot6d_to_rotmat(x):
     b2 = F.normalize(a2 - torch.einsum('bi,bi->b', b1, a2).unsqueeze(-1) * b1)
     b3 = torch.cross(b1, b2)
     return torch.stack((b1, b2, b3), dim=-1)
+
+
+def angle_axis_to_rot6d(aa):
+    assert aa.dim() == 2
+    assert aa.size(1) == 3
+    bs = aa.size(0)
+
+    rotmat = angle_axis_to_rotation_matrix(aa)
+    rot6d = rotmat[:, :3, :2]
+    return rot6d
