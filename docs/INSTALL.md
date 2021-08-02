@@ -1,5 +1,7 @@
 # Installation
 
+
+
 ## Installing All Modules
 
 - The entire modules can be installed following the instruction below.
@@ -9,17 +11,17 @@
   ```
   conda create -n venv_frankmocap python=3.7
   conda activate venv_frankmocap
-
+  
   # Install ffmpeg
-  sudo apt-get install ffmpeg libosmesa6-dev
-
+  sudo apt-get install ffmpeg libosmesa6-dev libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev freeglut3-dev
+  
   # Install cuda 
   # Choose versions based on your system. For example:
   # conda install cudatoolkit=10.1 cudnn=7.6.0
-
+  
   # Install pytorch and torchvision 
   conda install -c pytorch pytorch==1.6.0 torchvision cudatoolkit=10.1
-
+  
   # Install other required libraries
   pip install -r docs/requirements.txt
   ```
@@ -91,14 +93,14 @@
     ```
     conda create -n venv_frankmocap python=3.7
     conda activate venv_frankmocap
-
+    
     # Install cuda 
     # Choose versions based on your system. For example:
     # conda install cudatoolkit=10.1 cudnn=7.6.0
-
+    
     # Install pytorch and torchvision 
     conda install -c pytorch pytorch==1.6.0 torchvision cudatoolkit=10.1
-
+    
     # Install other required libraries
     pip install -r docs/requirements.txt
     ```
@@ -126,3 +128,58 @@
     ```
 - Setting SMPL/SMPL-X Models
     - You only need SMPL model. See above
+
+
+
+## Installing with Docker
+
+You need to build your own docker image, since the size of the image is about 11GiB. (too large to download)
+
+- Prerequisites
+  - [NVIDIA Docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
+- The basic steps
+
+  ```bash 
+  # clone the repo
+  git clone https://github.com/facebookresearch/frankmocap.git
+  cd frankmocap
+  
+  # build docker image
+  docker build -t frankmocap .
+  
+  # wait docker to finish
+  
+  # (base) junyi@ubuntu:~/docker$ docker build -t frankmocap .
+  # Sending build context to Docker daemon   75.4MB
+  # Step 1/13 : FROM nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
+  # Step 2/13 : ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+  # Step 3/13 : ENV PATH=${PATH}:/usr/local/cuda/bin
+  # Step 4/13 : ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda/lib64
+  # Step 5/13 : WORKDIR /root
+  # Step 6/13 : RUN apt-get update &&  ....
+  # Get:3 http://archive.ubuntu.com/ubuntu bionic InRelease [242 kB]
+  # Get:4 http://security.ubuntu.com/ubuntu bionic-security InRelease [88.7 kB]
+  # ...
+  # ...
+  # Step 13/13 : CMD [ "/bin/bash" ]
+  # Successfully built eeb0a77f487f
+  # Successfully tagged frankmocap:latest
+  
+  # run a docker container
+  docker run -it --gpus all frankmocap:latest /bin/bash
+  # root@09b5e84241a8:~/frankmocap#
+  
+  # Then, put your SMPL models into ./extra_data/smpl
+  # For example, you can use 'scp' to transfer files or 'docker volumes' to mapping.
+  ```
+
+- Run body motion capture (See README.md)
+
+  ```bash
+  # screenless mode (e.g., a remote server)
+  xvfb-run -a python -m demo.demo_bodymocap --input_path ./sample_data/han_short.mp4 --out_dir ./mocap_output
+  ```
+
+
+
