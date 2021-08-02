@@ -166,7 +166,7 @@ You need to build your own docker image, since the size of the image is about 11
   # Successfully built eeb0a77f487f
   # Successfully tagged frankmocap:latest
   
-  # run a docker container
+  # run a docker container (-it means create an interactive tty)
   docker run -it --gpus all frankmocap:latest /bin/bash
   # root@09b5e84241a8:~/frankmocap#
   
@@ -174,12 +174,27 @@ You need to build your own docker image, since the size of the image is about 11
   # For example, you can use 'scp' to transfer files or 'docker volumes' to mapping.
   ```
 
-- Run body motion capture (See README.md)
+- Optional (for users who want to copy SMPL model into container)
+
+  ```bash
+  # make sure that you are in the container env
+  apt-get update && apt-get install openssh-client
+  mkdir ./extra_data/smpl
+  
+  # TL;DR, the basic scp usage:
+  # scp <copy from>  <copy to>
+  # scp username@host:path  target_path 
+  scp junyi@192.168.1.2:/home/junyi/SMPLX_NEUTRAL.pkl ./extra_data/smpl/SMPLX_NEUTRAL.pkl
+  scp junyi@192.168.1.2:/home/junyi/basicmodel_neutral_lbs_10_207_0_v1.1.0.pkl ./extra_data/smpl/basicModel_neutral_lbs_10_207_0_v1.0.0.pkl
+  
+  # Your are all set!
+  ```
+
+- Run body motion capture
 
   ```bash
   # screenless mode (e.g., a remote server)
   xvfb-run -a python -m demo.demo_bodymocap --input_path ./sample_data/han_short.mp4 --out_dir ./mocap_output
   ```
 
-
-
+  
