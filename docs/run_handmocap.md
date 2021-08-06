@@ -101,7 +101,6 @@ Our hande module provides 3D hand motion capture output. We use the [HMR](https:
 - `--input_path webcam`: Run demo for a video file  (without using `--vPath` option)
 - `--input_path /your/path/video.mp4`: Run demo for a video file (mp4, avi, mov)
 - `--input_path /your/dirPath`: Run demo for a folder that contains image seqeunces
-- `--input_path /your/imagepath.jpg`: Run demo for an image (jpg, jpeg, png, bmp)
 - `--input_path /your/bboxDirPath`: Run demo for a folder that contains bbox json files. See [bbox format](https://github.com/facebookresearch/eft/blob/master/docs/README_dataformat.md#bbox-format-json)
 
 - `--view_type`: The view type of input. It could be ```third_view``` or```ego_centric```
