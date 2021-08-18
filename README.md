@@ -5,6 +5,7 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
 <b>Btw, why the name FrankMocap? </b> Our pipeline to integrate body and hand modules reminds us of [Frankenstein's monster](https://en.wikipedia.org/wiki/Frankenstein)!
 
 ### News:
+  - [2021/08/18] Our paper has been accepted to ICCV Workshop 2021.
   - [2020/10/09] We have improved openGL rendering speed. It's about 40% faster. (e.g., body module: 6fps -> 11fps)
 
 ## Key Features
@@ -87,11 +88,11 @@ See the [LICENSE](LICENSE) file.
 ## References
 - FrankMocap is based on the following research outputs:
 ```
-@article{rong2020frankmocap,
-  title={FrankMocap: Fast Monocular 3D Hand and Body Motion Capture by Regression and Integration},
+@InProceedings{rong2021frankmocap,
+  title={FrankMocap: A Monocular 3D Whole-Body Pose Estimation System via Regression and Integration},
   author={Rong, Yu and Shiratori, Takaaki and Joo, Hanbyul},
-  journal={arXiv preprint arXiv:2008.08324},
-  year={2020}
+  booktitle={IEEE International Conference on Computer Vision Workshops},
+  year={2021}
 }
 
 @article{joo2020eft,
