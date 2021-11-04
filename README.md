@@ -98,8 +98,8 @@ See the [LICENSE](LICENSE) file.
 @article{joo2020eft,
   title={Exemplar Fine-Tuning for 3D Human Pose Fitting Towards In-the-Wild 3D Human Pose Estimation},
   author={Joo, Hanbyul and Neverova, Natalia and Vedaldi, Andrea},
-  journal={arXiv preprint arXiv:2004.03686},
-  year={2020}
+  journal={3DV},
+  year={2021}
 }
 ```
 

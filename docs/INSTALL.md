@@ -10,8 +10,11 @@
   conda create -n venv_frankmocap python=3.7
   conda activate venv_frankmocap
 
+  # Install basic dependencies
+  sudo apt-get install libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev freeglut3-dev libosmesa6-dev
+
   # Install ffmpeg
-  sudo apt-get install ffmpeg libosmesa6-dev
+  sudo apt-get install ffmpeg 
 
   # Install cuda 
   # Choose versions based on your system. For example:
