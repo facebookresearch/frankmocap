@@ -8,37 +8,33 @@ import sys
 import numpy as np
 import cv2
 import pdb
+from .image_utils import draw_raw_bbox, draw_hand_bbox, draw_body_bbox, draw_arm_pose
 
+# To use screen_free visualizer. Either OpenDR or Pytorch3D should be installed.
 g_valid_visualize = False
 try:
     from .od_renderer import OpendrRenderer
     g_valid_visualize = True
 except ImportError:
-    print("Cannot import OpendrRenderer")
-
+    print("Cannot import OpenDR Renderer")
 try:
     from .p3d_renderer import Pytorch3dRenderer
     g_valid_visualize = True
 except ImportError:
-    print("Cannot import Pytorch3dRenderer")
-
+    print("Cannot import Pytorch3D Renderer")
 assert g_valid_visualize, "You should import either OpenDR or Pytorch3D"
-
-from renderer.image_utils import draw_raw_bbox, draw_hand_bbox, draw_body_bbox, draw_arm_pose
-
-
-colors = {
-    # colorbline/print/copy safe:
-    'light_gray':  [0.9, 0.9, 0.9],
-    'light_purple':  [0.8, 0.53, 0.53],
-    'light_green': [166/255.0, 178/255.0, 30/255.0],
-    'light_blue': [0.65098039, 0.74117647, 0.85882353],
-}
-
 
 class Visualizer(object):
 
     def __init__(self, renderer_backend):
+        colors = {
+            # colorbline/print/copy safe:
+            'light_gray':  [0.9, 0.9, 0.9],
+            'light_purple':  [0.8, 0.53, 0.53],
+            'light_green': [166/255.0, 178/255.0, 30/255.0],
+            'light_blue': [0.65098039, 0.74117647, 0.85882353],
+        }
+
         self.input_size = 1920
 
         # set-up renderer
