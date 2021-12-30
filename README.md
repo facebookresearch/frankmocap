@@ -29,7 +29,7 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
     <img src="https://github.com/jhugestar/jhugestar.github.io/blob/master/img/frankmocap_wholebody.gif" height="200">
 </p>
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/video_02.gif" height="200">
+    <img src="https://penincillin.github.io/project/frankmocap_iccvw2021/video_02.gif" height="200">
 </p>
 
 
@@ -98,8 +98,8 @@ See the [LICENSE](LICENSE) file.
 @article{joo2020eft,
   title={Exemplar Fine-Tuning for 3D Human Pose Fitting Towards In-the-Wild 3D Human Pose Estimation},
   author={Joo, Hanbyul and Neverova, Natalia and Vedaldi, Andrea},
-  journal={arXiv preprint arXiv:2004.03686},
-  year={2020}
+  journal={3DV},
+  year={2021}
 }
 ```
 

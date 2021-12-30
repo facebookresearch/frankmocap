@@ -48,7 +48,7 @@ To obtain predicted 3D hand joint angles (in [angle-axis format](https://en.wiki
 
 The axis of joint angle is depicted below (right-hand rule):
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/axis.png" height="300">
+    <img src="https://penincillin.github.io/project/frankmocap_iccvw2021/axis.png" height="300">
 </p>
 
 
@@ -171,7 +171,7 @@ The order of body joint (angle) is listed below:
 
 The skeleton of SMPL body is depicted below, for SMPL-X body, the 22-th and 23-th body joint are invalid:
 <p>
-    <img src="https://penincillin.github.io/frank_mocap/body_skeleton.png" height="500">
+    <img src="https://penincillin.github.io/project/frankmocap_iccvw2021/body_skeleton.png" height="500">
 </p>
 
 
