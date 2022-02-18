@@ -53,7 +53,7 @@ class DemoOptions():
         parser.add_argument('--frankmocap_fast_mode', action='store_true', help="Use fast hand detection mode for whole body motion capture (frankmocap)")
 
         # renderer
-        parser.add_argument("--renderer_type", type=str, default="opengl", 
+        parser.add_argument("--renderer_type", type=str, default="pytorch3d", 
             choices=['pytorch3d', 'opendr', 'opengl_gui', 'opengl'], help="type of renderer to use")
 
         self.parser = parser

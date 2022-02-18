@@ -20,11 +20,14 @@ from pytorch3d.renderer import (
     MeshRasterizer,  
     SoftPhongShader,
 )
+from alfred.dl.torch.common import device
+
 
 class Pytorch3dRenderer(object):
 
     def __init__(self, img_size, mesh_color):
-        self.device = torch.device("cuda:0")
+        # self.device = torch.device("cuda:0")
+        self.device = device
         # self.render_size = 1920
 
         self.img_size = img_size
@@ -149,8 +152,8 @@ class Pytorch3dRenderer(object):
         verts[:, 2] /= 112
         verts[:, 2] += 5
 
-        verts_tensor = torch.from_numpy(verts).float().unsqueeze(0).cuda()
-        faces_tensor = torch.from_numpy(faces.copy()).long().unsqueeze(0).cuda()
+        verts_tensor = torch.from_numpy(verts).float().unsqueeze(0).to(self.device)
+        faces_tensor = torch.from_numpy(faces.copy()).long().unsqueeze(0).to(self.device)
 
         # set color
         mesh_color = self.mesh_color.repeat(1, verts.shape[0], 1)

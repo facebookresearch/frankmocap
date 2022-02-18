@@ -20,6 +20,7 @@ from detectors.body_pose_estimator.modules.load_state import load_state
 from detectors.body_pose_estimator.val import normalize, pad_width
 from detectors.body_pose_estimator.modules.pose import Pose, track_poses
 from detectors.body_pose_estimator.modules.keypoints import extract_keypoints, group_keypoints
+from alfred.dl.torch.common import device
 
 
 class BodyPoseEstimator(object):
@@ -38,7 +39,7 @@ class BodyPoseEstimator(object):
         checkpoint = torch.load(pose2d_checkpoint, map_location='cpu')
         load_state(net, checkpoint)
         net = net.eval()
-        net = net.cuda()
+        # net = net.cuda()
         self.model = net
     
 
@@ -54,8 +55,7 @@ class BodyPoseEstimator(object):
         padded_img, pad = pad_width(scaled_img, stride, pad_value, min_dims)
 
         tensor_img = torch.from_numpy(padded_img).permute(2, 0, 1).unsqueeze(0).float()
-        if not cpu:
-            tensor_img = tensor_img.cuda()
+        tensor_img = tensor_img.to(device)
 
         stages_output = self.model(tensor_img)
 

@@ -12,12 +12,14 @@ from bodymocap import constants
 from bodymocap.utils.imutils import crop, crop_bboxInfo, process_image_bbox, process_image_keypoints, bbox_from_keypoints
 from mocap_utils.coordconv import convert_smpl_to_bbox, convert_bbox_to_oriIm
 import mocap_utils.geometry_utils as gu
+from alfred.dl.torch.common import device
+import os
+from .utils.utils import ORTWrapper
 
 
 class BodyMocap(object):
     def __init__(self, regressor_checkpoint, smpl_dir, device=torch.device('cuda'), use_smplx=False):
-
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = device
 
         # Load parametric model (SMPLX or SMPL)
         if use_smplx:
@@ -35,10 +37,19 @@ class BodyMocap(object):
             
         #Load pre-trained neural network 
         SMPL_MEAN_PARAMS = './extra_data/body_module/data_from_spin/smpl_mean_params.npz'
-        self.model_regressor = hmr(SMPL_MEAN_PARAMS).to(self.device)
-        checkpoint = torch.load(regressor_checkpoint)
-        self.model_regressor.load_state_dict(checkpoint['model'], strict=False)
-        self.model_regressor.eval()
+        self.model_regressor_onnx_file = regressor_checkpoint.replace('pt', 'onnx')
+        if os.path.exists(self.model_regressor_onnx_file):
+            self.model_regressor = ORTWrapper(self.model_regressor_onnx_file)
+        else:
+            self.model_regressor = hmr(SMPL_MEAN_PARAMS).to(self.device)
+            checkpoint = torch.load(regressor_checkpoint, map_location='cpu')
+            self.model_regressor.load_state_dict(checkpoint['model'], strict=False)
+            self.model_regressor.eval()
+
+            # export to onnx
+            a = torch.rand([1, 3, 224, 224]).to(device)
+            # torch.onnx.export(self.model_regressor, a, self.model_regressor_onnx_file)
+            print('an onnx saved into: ', self.model_regressor_onnx_file)
         
 
     def regress(self, img_original, body_bbox_list):
@@ -74,7 +85,8 @@ class BodyMocap(object):
 
                 #Convert rot_mat to aa since hands are always in aa
                 # pred_aa = rotmat3x3_to_angle_axis(pred_rotmat)
-                pred_aa = gu.rotation_matrix_to_angle_axis(pred_rotmat).cuda()
+                # pred_aa = gu.rotation_matrix_to_angle_axis(pred_rotmat).cuda()
+                pred_aa = gu.rotation_matrix_to_angle_axis(pred_rotmat).to(device)
                 pred_aa = pred_aa.reshape(pred_aa.shape[0], 72)
                 smpl_output = self.smpl(
                     betas=pred_betas, 
