@@ -86,7 +86,14 @@ def rot6d_to_rotmat(x):
     a2 = x[:, :, 1]
     b1 = F.normalize(a1)
     b2 = F.normalize(a2 - torch.einsum('bi,bi->b', b1, a2).unsqueeze(-1) * b1)
-    b3 = torch.cross(b1, b2)
+    if torch.onnx.is_in_onnx_export():
+        # cross not support by onnx
+        b3 = torch.stack((
+            b1[...,1]*b2[...,2] - b1[...,2]*b2[...,1],
+            b1[...,2]*b2[...,0] - b1[...,0]*b2[...,2],
+            b1[...,0]*b2[...,1] - b1[...,1]*b2[...,0]), dim=-1)
+    else:
+        b3 = torch.cross(b1, b2)
     return torch.stack((b1, b2, b3), dim=-1)
 
      

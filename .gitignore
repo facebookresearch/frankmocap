@@ -3,3 +3,4 @@ tests.py
 mocap_output/
 sample_data/
 extra_data/
+*.onnx
