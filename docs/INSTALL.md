@@ -119,7 +119,7 @@
     ```
     sh scripts/install_pose2d.sh
     ```
-    - Download pretrined model and other extra data
+    - Download pretrained model and other extra data
     ```
     sh scripts/download_data_body_module.sh
     ```
