@@ -9,4 +9,4 @@ then
 else
     echo "There exists sample_data already"
 fi
-echo "Done
+echo "Done"
