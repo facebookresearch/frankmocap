@@ -20,3 +20,6 @@ smplx
 sklearn
 opendr
 chumpy
+alfred-py
+realrender
+
