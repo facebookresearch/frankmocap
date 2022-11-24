@@ -32,7 +32,7 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
         # load data
         load_bbox = False
 
-        if input_type =='image_dir':
+        if input_type in ['image', 'image_dir']:
             if cur_frame < len(input_data):
                 image_path = input_data[cur_frame]
                 img_original_bgr  = cv2.imread(image_path)
