@@ -31,6 +31,7 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
     while True:
         # load data
         load_bbox = False
+        body_bbox_list = None
 
         if input_type =='image_dir':
             if cur_frame < len(input_data):
@@ -108,12 +109,14 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
         if len(hand_bbox_list) < 1:
             print(f"No hand deteced: {image_path}")
             continue
+        if body_bbox_list is not None:
+            assert len(hand_bbox_list) == len(body_bbox_list)
     
         # Hand Pose Regression
         pred_output_list = hand_mocap.regress(
                 img_original_bgr, hand_bbox_list, add_margin=True)
-        assert len(hand_bbox_list) == len(body_bbox_list)
-        assert len(body_bbox_list) == len(pred_output_list)
+        if body_bbox_list is not None:
+            assert len(body_bbox_list) == len(pred_output_list)
 
         # extract mesh for rendering (vertices in image space and faces) from pred_output_list
         pred_mesh_list = demo_utils.extract_mesh_from_output(pred_output_list)
@@ -159,7 +162,9 @@ def main():
     assert torch.cuda.is_available(), "Current version only supports GPU"
 
     #Set Bbox detector
-    bbox_detector =  HandBboxDetector(args.view_type, device)
+    bbox_detector = None
+    if args.crop_type != "hand_crop":
+        bbox_detector = HandBboxDetector(args.view_type, device)
 
     # Set Mocap regressor
     hand_mocap = HandMocap(args.checkpoint_hand, args.smpl_dir, device = device)
