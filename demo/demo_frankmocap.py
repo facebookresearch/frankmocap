@@ -45,7 +45,8 @@ def __filter_bbox_list(body_bbox_list, hand_bbox_list, single_person):
 def run_regress(
     args, img_original_bgr, 
     body_bbox_list, hand_bbox_list, bbox_detector,
-    body_mocap, hand_mocap
+    body_mocap, hand_mocap,
+    use_cuda=True
 ):
     cond1 = len(body_bbox_list) > 0 and len(hand_bbox_list) > 0
     cond2 = not args.frankmocap_fast_mode
@@ -102,12 +103,14 @@ def run_regress(
 
     # integration by copy-and-paste
     integral_output_list = integration_copy_paste(
-        pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape)
+        pred_body_list, pred_hand_list, body_mocap.smpl, img_original_bgr.shape,
+        use_cuda=use_cuda
+    )
     
     return body_bbox_list, hand_bbox_list, integral_output_list
 
 
-def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
+def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer, use_cuda=True):
     #Setup input data to handle different types of inputs
     input_type, input_data = demo_utils.setup_input(args)
 
@@ -176,7 +179,9 @@ def run_frank_mocap(args, bbox_detector, body_mocap, hand_mocap, visualizer):
         body_bbox_list, hand_bbox_list, pred_output_list = run_regress(
             args, img_original_bgr, 
             body_bbox_list, hand_bbox_list, bbox_detector,
-            body_mocap, hand_mocap)
+            body_mocap, hand_mocap,
+            use_cuda=use_cuda
+        )
 
         # save the obtained body & hand bbox to json file
         if args.save_bbox_output: 
@@ -225,7 +230,7 @@ def main():
     args.use_smplx = True
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    assert torch.cuda.is_available(), "Current version only supports GPU"
+    use_cuda = device.type == 'cuda'
 
     hand_bbox_detector =  HandBboxDetector('third_view', device)
     
@@ -240,7 +245,7 @@ def main():
         from renderer.visualizer import Visualizer
     visualizer = Visualizer(args.renderer_type)
 
-    run_frank_mocap(args, hand_bbox_detector, body_mocap, hand_mocap, visualizer)
+    run_frank_mocap(args, hand_bbox_detector, body_mocap, hand_mocap, visualizer, use_cuda=use_cuda)
 
 
 if __name__ == '__main__':

@@ -42,8 +42,8 @@ class Third_View_Detector(BodyPoseEstimator):
     It combines a body pose estimator (https://github.com/jhugestar/lightweight-human-pose-estimation.pytorch.git)
     with a type-agnostic hand detector (https://github.com/ddshan/hand_detector.d2)
     """
-    def __init__(self):
-        super(Third_View_Detector, self).__init__()
+    def __init__(self, use_cuda=True):
+        super(Third_View_Detector, self).__init__(use_cuda=use_cuda)
         print("Loading Third View Hand Detector")
         self.__load_hand_detector()
     
@@ -51,6 +51,8 @@ class Third_View_Detector(BodyPoseEstimator):
     def __load_hand_detector(self):
          # load cfg and model
         cfg = get_cfg()
+        if not self.use_cuda:
+            cfg.MODEL.DEVICE = 'cpu'
         cfg.merge_from_file("detectors/hand_only_detector/faster_rcnn_X_101_32x8d_FPN_3x_100DOH.yaml")
         cfg.MODEL.WEIGHTS = 'extra_data/hand_module/hand_detector/model_0529999.pth' # add model weight here
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.3  # 0.3 , use low thresh to increase recall
@@ -139,8 +141,8 @@ class Ego_Centric_Detector(BodyPoseEstimator):
     It uses type-aware hand detector:
     (https://github.com/ddshan/hand_object_detector)
     """
-    def __init__(self):
-        super(Ego_Centric_Detector, self).__init__()
+    def __init__(self, use_cuda=True):
+        super(Ego_Centric_Detector, self).__init__(use_cuda=use_cuda)
         print("Loading Ego Centric Hand Detector")
         self.__load_hand_detector()
     
@@ -158,8 +160,9 @@ class Ego_Centric_Detector(BodyPoseEstimator):
         fasterRCNN.load_state_dict(checkpoint['model'])
         if 'pooling_mode' in checkpoint.keys():
             cfgg.POOLING_MODE = checkpoint['pooling_mode']
-        
-        fasterRCNN.cuda()
+
+        if self.use_cuda:
+            fasterRCNN.cuda()
         fasterRCNN.eval()
         self.hand_detector = fasterRCNN
     
@@ -196,11 +199,12 @@ class Ego_Centric_Detector(BodyPoseEstimator):
     # part of the code comes from https://github.com/ddshan/hand_object_detector/demo.py
     def __get_raw_hand_bbox(self, img):
         with torch.no_grad():
-            im_data = torch.FloatTensor(1).cuda()
-            im_info = torch.FloatTensor(1).cuda()
-            num_boxes = torch.LongTensor(1).cuda()
-            gt_boxes = torch.FloatTensor(1).cuda()
-            box_info = torch.FloatTensor(1).cuda()
+            if self.use_cuda:
+                im_data = torch.FloatTensor(1).cuda()
+                im_info = torch.FloatTensor(1).cuda()
+                num_boxes = torch.LongTensor(1).cuda()
+                gt_boxes = torch.FloatTensor(1).cuda()
+                box_info = torch.FloatTensor(1).cuda()
 
             im_blob, im_scales = self.__get_image_blob(img)
 
@@ -231,10 +235,13 @@ class Ego_Centric_Detector(BodyPoseEstimator):
             lr = lr.squeeze(0).float()
 
             box_deltas = bbox_pred.data
-            stds = [0.1, 0.1, 0.2, 0.2]
-            means = [0.0, 0.0, 0.0, 0.0]
-            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(stds).cuda() \
-                + torch.FloatTensor(means).cuda()
+            stds = torch.FloatTensor([0.1, 0.1, 0.2, 0.2])
+            means = torch.FloatTensor([0.0, 0.0, 0.0, 0.0])
+            if self.use_cuda:
+                stds = stds.cuda()
+                means = stds.cuda()
+            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(stds) \
+                + torch.FloatTensor(means)
             box_deltas = box_deltas.view(1, -1, 4 * len(self.classes))
 
             pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
@@ -303,12 +310,13 @@ class HandBboxDetector(object):
         args:
             view_type: third_view or ego_centric.
         """
+        use_cuda = device.type == 'cuda'
         self.view_type = view_type
 
         if view_type == "ego_centric":
-            self.model = Ego_Centric_Detector()
+            self.model = Ego_Centric_Detector(use_cuda=use_cuda)
         elif view_type == "third_view":
-            self.model = Third_View_Detector()
+            self.model = Third_View_Detector(use_cuda=use_cuda)
         else :
             print("Invalid view_type")
             assert False
